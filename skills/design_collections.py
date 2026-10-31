@@ -20,7 +20,7 @@ import urllib.request
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-SOURCES = json.loads((HERE / "collections.lock.json").read_text())
+SOURCES = json.loads((HERE / "collections.lock.json").read_text(encoding="utf-8"))
 LABELS = {"typeui": "TypeUI", "tweakcn": "tweakcn", "uipro": "UI UX Pro Max"}
 
 
@@ -41,7 +41,7 @@ def fetch_sources(cache):
     for name, source in SOURCES.items():
         folder = cache / name
         folder.mkdir(parents=True, exist_ok=True)
-        if (folder / "source.json").exists() and json.loads((folder / "source.json").read_text()) != source:
+        if (folder / "source.json").exists() and json.loads((folder / "source.json").read_text(encoding="utf-8")) != source:
             raise ValueError(f"Cache revision mismatch: {name}; use a new cache directory")
         tree = json.loads(download(f"https://api.github.com/repos/{source['repo']}/git/trees/{source['sha']}?recursive=1"))
         if tree.get("truncated"):
@@ -55,7 +55,7 @@ def fetch_sources(cache):
                 or name == "uipro" and path == "src/ui-ux-pro-max/data/styles.csv")
             if take:
                 jobs.append((folder, source, path))
-        (folder / "source.json").write_text(json.dumps(source))
+        (folder / "source.json").write_text(json.dumps(source), encoding="utf-8")
 
     def fetch(job):
         folder, source, path = job
@@ -112,25 +112,25 @@ Source workflows for authoring guideline documents apply when that is the reques
 their visual foundations to complete the user's design task. Locally rendered specimens use available system
 fonts as fallbacks; the source specification remains authoritative for the intended font families.
 """
-    (folder / "SKILL.md").write_text(header(name, title, origin, summary, description, colors, font, style) + body)
-    (folder / "references.json").write_text(json.dumps({"images": images, "links": links}, ensure_ascii=False, indent=2) + "\n")
+    (folder / "SKILL.md").write_text(header(name, title, origin, summary, description, colors, font, style) + body, encoding="utf-8")
+    (folder / "references.json").write_text(json.dumps({"images": images, "links": links}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     source = SOURCES[origin]
     attribution = f"# {title}\n\nCollection: {LABELS[origin]}\nRepository: https://github.com/{source['repo']}\nRevision: {source['sha']}\n\n"
     attribution += "\n".join(f"- https://github.com/{source['repo']}/blob/{source['sha']}/{path}" for path in source_paths)
     attribution += "\n\nChanges: original data/specifications retained; FigCraft adapter and metadata added. " + note + "\n"
     attribution += "\nOriginal files (SHA-256):\n" + "\n".join(f"- {path}: {hashlib.sha256(data if isinstance(data, bytes) else data.encode()).hexdigest()}" for path, data in originals.items()) + "\n"
-    (folder / "ATTRIBUTION.md").write_text(attribution)
+    (folder / "ATTRIBUTION.md").write_text(attribution, encoding="utf-8")
     return folder
 
 
 def import_typeui(cache, out):
     root = cache / "typeui"
-    index = json.loads((root / "skills/index.json").read_text())
+    index = json.loads((root / "skills/index.json").read_text(encoding="utf-8"))
     rendered = []
     for slug, entry in sorted(index.items()):
         skill = root / entry["skillPath"]
         design = root / entry["designPath"]
-        source = skill.read_text()
+        source = skill.read_text(encoding="utf-8")
         desc = re.search(r"^description:\s*(.+)$", source, re.M)
         desc = desc[1].strip('"') if desc else f"{entry['name']} design system."
         colors = list(dict.fromkeys(re.findall(r"#[0-9A-Fa-f]{6}\b", source)))
@@ -213,7 +213,7 @@ def import_tweakcn(cache, out):
         for mode in ("light", "dark"):
             values = {**light, **preset["styles"][mode]}
             page = folder / f"assets/{mode}.html"
-            page.write_text(specimen(title, "tweakcn", values, mode))
+            page.write_text(specimen(title, "tweakcn", values, mode), encoding="utf-8")
             jobs.append({"html": str(page.resolve()), "image": str(page.with_suffix(".webp").resolve())})
         folders.append(folder)
     return folders, jobs
@@ -268,7 +268,7 @@ def style_tokens(row):
 def import_uipro(cache, out):
     root = cache / "uipro"
     source_path = "src/ui-ux-pro-max/data/styles.csv"
-    rows = list(csv.DictReader((root / source_path).open()))
+    rows = list(csv.DictReader((root / source_path).open(encoding="utf-8")))
     jobs, folders = [], []
     for row in rows:
         if row["Status"] not in ("active", "supplemental"):
@@ -285,7 +285,7 @@ def import_uipro(cache, out):
             [{"label": "Каталог UI UX Pro Max", "url": "https://www.uupm.cc/"}, {"label": "Исходная спецификация", "url": f"https://github.com/{SOURCES['uipro']['repo']}/blob/{SOURCES['uipro']['sha']}/{source_path}"}],
             preview_colors, props.get("font-family", ""), row["Type"], "The preview is a locally rendered, illustrative specimen of the style's colors and concrete CSS properties, not an upstream screenshot. Consult the full specification for materials, composition, motion and platform requirements; sample values fill gaps where the source is qualitative.")
         page = folder / "assets/preview.html"
-        page.write_text(specimen(title, "uipro", tokens, row["Preferred Mode"], props))
+        page.write_text(specimen(title, "uipro", tokens, row["Preferred Mode"], props), encoding="utf-8")
         jobs.append({"html": str(page.resolve()), "image": str(page.with_suffix(".webp").resolve())})
         folders.append(folder)
     return folders, jobs
@@ -300,7 +300,7 @@ def main():
     if args.fetch:
         fetch_sources(args.cache)
     for name, source in SOURCES.items():
-        if json.loads((args.cache / name / "source.json").read_text()) != source:
+        if json.loads((args.cache / name / "source.json").read_text(encoding="utf-8")) != source:
             raise ValueError(f"Cache revision mismatch: {name}")
     typeui = import_typeui(args.cache, args.out)
     tweakcn, tweak_jobs = import_tweakcn(args.cache, args.out)
@@ -308,7 +308,7 @@ def main():
     jobs = tweak_jobs + uipro_jobs
     manifest = {"sources": SOURCES, "counts": {"typeui": len(typeui), "tweakcn": len(tweakcn), "uipro": len(uipro)}, "previews": jobs}
     # A local rendering queue contains absolute paths and stays in the import cache.
-    (args.cache / "render-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n")
+    (args.cache / "render-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(manifest["counts"]) + f"; {len(jobs)} previews to render")
 
 

@@ -88,7 +88,7 @@ def kill(pid):
 
 def alive(pid):
     if WINDOWS:
-        out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"], capture_output=True, text=True).stdout
+        out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"], capture_output=True, text=True, encoding="utf-8", errors="replace").stdout
         return str(pid) in out
     try:
         os.kill(pid, 0)
@@ -156,7 +156,7 @@ def detach(cmd):
 
 def hypr_window(cls, field):
     """A field of the first Hyprland window of a class ("workspace.name"), or None."""
-    out = subprocess.run(["hyprctl", "clients", "-j"], capture_output=True, text=True).stdout
+    out = subprocess.run(["hyprctl", "clients", "-j"], capture_output=True, text=True, encoding="utf-8").stdout
     for c in json.loads(out or "[]"):
         if c.get("class") == cls:
             for key in field.split("."):

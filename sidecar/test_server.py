@@ -23,7 +23,7 @@ class Page(unittest.TestCase):
             built = os.path.join(d, "index.html")
             self.assertEqual(server.page(built)[0], 503)
             self.assertIn(b"run build", server.page(built)[1])
-            with open(built, "w") as f:
+            with open(built, "w", encoding="utf-8") as f:
                 f.write("<div id=root>")
             self.assertEqual(server.page(built), (200, b"<div id=root>"))
         self.assertTrue(server.PAGE.endswith(os.path.join("web", "dist", "index.html")))
@@ -155,10 +155,10 @@ class DesignMd(unittest.TestCase):
             reply = {"parts": [{"kind": "text", "text": "Вот:\n```design-md\n# X — design context\nTODO: уточнить\n```\nГотово."}]}
             App.save_design_md({"file": f}, reply)
             self.assertEqual(reply["saved"], os.path.join(d, "repo", "DESIGN.md"))
-            self.assertEqual(open(reply["saved"]).read(), "# X — design context\nTODO: уточнить\n")
+            self.assertEqual(open(reply["saved"], encoding="utf-8").read(), "# X — design context\nTODO: уточнить\n")
             self.assertEqual(server.design_md(f)[0], reply["saved"])
             App.save_design_md({"file": f}, {"parts": [{"kind": "text", "text": "```design-md\n# v2\n```"}]})
-            self.assertEqual(open(reply["saved"] + ".bak").read(), "# X — design context\nTODO: уточнить\n", "the old one is kept")
+            self.assertEqual(open(reply["saved"] + ".bak", encoding="utf-8").read(), "# X — design context\nTODO: уточнить\n", "the old one is kept")
             nothing = {"parts": [{"kind": "text", "text": "без блока"}]}
             App.save_design_md({"file": f}, nothing)
             self.assertNotIn("saved", nothing)
@@ -658,9 +658,9 @@ class SkillLibrary(unittest.TestCase):
         self.root = self.tmp.name
         self.folder = os.path.join(self.root, "graphite")
         os.makedirs(self.folder)
-        with open(os.path.join(self.folder, "SKILL.md"), "w") as f:
+        with open(os.path.join(self.folder, "SKILL.md"), "w", encoding="utf-8") as f:
             f.write("---\nname: graphite\nmetadata:\n  group: style\n  mode: manual\n---\n\nGraphite body")
-        with open(os.path.join(self.folder, "tokens.md"), "w") as f:
+        with open(os.path.join(self.folder, "tokens.md"), "w", encoding="utf-8") as f:
             f.write("Tokens")
         self.skill = server.skills.read_skill(self.folder, "builtin")
         self.cat = patch.object(server.skills, "catalog", return_value=[self.skill])
@@ -718,7 +718,7 @@ class SkillLibrary(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(imported["dir"], "tokens.md")))
             with self.assertRaises(ValueError):
                 server.skills.import_folder(self.folder)
-            with open(os.path.join(imported["dir"], "tokens.md")) as f:
+            with open(os.path.join(imported["dir"], "tokens.md"), encoding="utf-8") as f:
                 self.assertEqual(f.read(), "Tokens")
             os.symlink("tokens.md", os.path.join(self.folder, "link"))
             with self.assertRaises(ValueError):
@@ -736,7 +736,7 @@ class SkillLibrary(unittest.TestCase):
                                 {"file": "linked.png"}, {"file": "SKILL.md"}, {"file": "missing.png"}],
                     "links": [{"label": "Пример", "url": "https://example.org/theme/"},
                               {"url": "javascript:alert(1)"}, {"url": "file:///etc/passwd"}]}
-        with open(os.path.join(self.folder, "references.json"), "w") as f:
+        with open(os.path.join(self.folder, "references.json"), "w", encoding="utf-8") as f:
             json.dump(manifest, f)
         refs = server.skills.details(self.skill)["references"]
         self.assertEqual([i["file"] for i in refs["images"]], ["preview.webp"])
@@ -750,16 +750,16 @@ class SkillLibrary(unittest.TestCase):
     def test_references_are_optional_and_malformed_manifests_are_ignored(self):
         self.assertEqual(server.skills.references(self.skill), {"images": [], "links": []})
         for content in ("{bad json", "[]", '{"images": 3, "links": "wrong"}'):
-            with open(os.path.join(self.folder, "references.json"), "w") as f:
+            with open(os.path.join(self.folder, "references.json"), "w", encoding="utf-8") as f:
                 f.write(content)
             self.assertEqual(server.skills.references(self.skill), {"images": [], "links": []})
 
     def test_collection_metadata_is_independent_of_the_installation_source(self):
-        with open(os.path.join(self.folder, "SKILL.md"), "w") as f:
+        with open(os.path.join(self.folder, "SKILL.md"), "w", encoding="utf-8") as f:
             f.write("---\nname: graphite\nmetadata:\n  group: task\n  origin: opendesign\n  category: apps\n  style: Soft\n---\nTask body")
         with open(os.path.join(self.folder, "reference.webp"), "wb") as f:
             f.write(b"image")
-        with open(os.path.join(self.folder, "references.json"), "w") as f:
+        with open(os.path.join(self.folder, "references.json"), "w", encoding="utf-8") as f:
             json.dump({"images": [{"file": "reference.webp"}]}, f)
         skill = server.skills.read_skill(self.folder, "builtin")
         self.assertEqual((skill["origin"], skill["category"], skill["source"], skill["style"]), ("opendesign", "apps", "builtin", "Soft"))
@@ -772,7 +772,7 @@ class SkillLibrary(unittest.TestCase):
     def test_design_resource_metadata_reaches_the_catalog_and_card(self):
         meta = {"category": "design-systems", "resource_kind": "components", "formats": "figma code",
                 "resource_source": "mixed", "access": "mixed"}
-        with open(os.path.join(self.folder, "SKILL.md"), "w") as f:
+        with open(os.path.join(self.folder, "SKILL.md"), "w", encoding="utf-8") as f:
             f.write("---\nname: graphite\nmetadata:\n  group: library\n"
                     + "".join(f"  {k}: {v}\n" for k, v in meta.items()) + "---\nComponent guidance")
         skill = server.skills.read_skill(self.folder, "builtin")

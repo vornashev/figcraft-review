@@ -194,7 +194,7 @@ def main():
     args = parser.parse_args()
     if args.adapter:
         return print(f"{rewrite_adapters(args.out)} adapters rewritten")
-    html = args.index.read_text() if args.index else download(SITE + "/prompts/?type=all").decode()
+    html = args.index.read_text(encoding="utf-8") if args.index else download(SITE + "/prompts/?type=all").decode()
     entries = parse_catalog(html)
     args.cache.mkdir(parents=True, exist_ok=True)
     def import_one(entry):

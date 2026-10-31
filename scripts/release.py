@@ -82,7 +82,7 @@ def check(v):
 
 
 def release(v):
-    git = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True).stdout.strip()  # noqa: E731
+    git = lambda *a: subprocess.run(["git", *a], cwd=ROOT, capture_output=True, text=True, encoding="utf-8").stdout.strip()  # noqa: E731
     if git("status", "--porcelain"):
         sys.exit("the working tree isn't clean")
     if git("branch", "--show-current") != "main":

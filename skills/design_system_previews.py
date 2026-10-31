@@ -85,18 +85,18 @@ def main():
     args = parser.parse_args()
     jobs = []
     for folder in sorted(args.root.glob('design-*')):
-        data = json.loads((folder / 'references/tokens.json').read_text())
-        (folder / 'references/foundations.md').write_text(foundations(data))
-        manifest = json.loads((folder / 'references.json').read_text())
+        data = json.loads((folder / 'references/tokens.json').read_text(encoding="utf-8"))
+        (folder / 'references/foundations.md').write_text(foundations(data), encoding="utf-8")
+        manifest = json.loads((folder / 'references.json').read_text(encoding="utf-8"))
         manifest['images'] = []
         for mode, label in [('light', 'Светлая'), ('dark', 'Тёмная')]:
             page = folder / f'assets/preview-{mode}.html'
-            page.write_text(specimen(data, mode, folder.name.removeprefix('design-')))
+            page.write_text(specimen(data, mode, folder.name.removeprefix('design-')), encoding="utf-8")
             target = page.with_suffix('.webp')
             jobs.append({'html': str(page.resolve()), 'image': str(target.resolve()), 'kind': 'design-system'})
             manifest['images'].append({'file': str(target.relative_to(folder)), 'label': label})
-        (folder / 'references.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n')
-    args.manifest.write_text(json.dumps({'previews': jobs}, indent=2) + '\n')
+        (folder / 'references.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + '\n', encoding="utf-8")
+    args.manifest.write_text(json.dumps({'previews': jobs}, indent=2) + '\n', encoding="utf-8")
     print(f'{len(jobs)} local specimens prepared; render {args.manifest}')
 
 

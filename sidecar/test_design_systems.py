@@ -33,7 +33,7 @@ class DesignSystems(unittest.TestCase):
                     data, kind = skills.reference_image(skill, image['file'])
                     self.assertEqual((data[:4], data[8:12], kind), (b'RIFF', b'WEBP', 'image/webp'))
                     self.assertGreater(len(data), 5000)
-                tokens = json.loads((folder / 'references/tokens.json').read_text())
+                tokens = json.loads((folder / 'references/tokens.json').read_text(encoding="utf-8"))
                 self.assertEqual(set(tokens['themes']), {'light', 'dark'})
                 for theme in tokens['themes'].values():
                     for key in tokens['roles'].values():

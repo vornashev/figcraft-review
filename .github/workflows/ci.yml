@@ -78,6 +78,9 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      - name: The skill importers' TypeScript reader
+        run: python3 -m unittest test_design_collections -v
+        working-directory: sidecar
       - uses: browser-actions/setup-chrome@v2
         id: chrome
       - name: The chat in headless Chromium

@@ -37,17 +37,17 @@ class Importer(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             folder = od.write_skill(entry, data, Path(root))
             self.assertEqual((folder / "assets/reference.webp").read_bytes(), image)
-            self.assertEqual((folder / "references/prompt.md").read_text(), prompt)
-            self.assertEqual((folder / "references/source-bundle.txt").read_text(), "Source instructions")
-            self.assertEqual((folder / "assets/upstream/fonts/license.txt").read_text(), "Font license")
-            refs = json.loads((folder / "references.json").read_text())
+            self.assertEqual((folder / "references/prompt.md").read_text(encoding="utf-8"), prompt)
+            self.assertEqual((folder / "references/source-bundle.txt").read_text(encoding="utf-8"), "Source instructions")
+            self.assertEqual((folder / "assets/upstream/fonts/license.txt").read_text(encoding="utf-8"), "Font license")
+            refs = json.loads((folder / "references.json").read_text(encoding="utf-8"))
             self.assertTrue((folder / refs["images"][0]["file"]).is_file())
-            self.assertIn("references/prompt.md", (folder / "SKILL.md").read_text())
-            self.assertNotIn("Inspect", (folder / "SKILL.md").read_text(), "the picture is not read by default")
-            text = (folder / "SKILL.md").read_text()
-            (folder / "SKILL.md").write_text(text.replace("checklist by default", "old adapter"))
+            self.assertIn("references/prompt.md", (folder / "SKILL.md").read_text(encoding="utf-8"))
+            self.assertNotIn("Inspect", (folder / "SKILL.md").read_text(encoding="utf-8"), "the picture is not read by default")
+            text = (folder / "SKILL.md").read_text(encoding="utf-8")
+            (folder / "SKILL.md").write_text(text.replace("checklist by default", "old adapter"), encoding="utf-8")
             self.assertEqual(od.rewrite_adapters(Path(root)), 1)
-            self.assertEqual((folder / "SKILL.md").read_text(), text, "the adapter is rewritten, the frontmatter kept")
+            self.assertEqual((folder / "SKILL.md").read_text(encoding="utf-8"), text, "the adapter is rewritten, the frontmatter kept")
 
     def test_bundle_rejects_missing_images_invalid_images_and_path_traversal(self):
         for files in ({"prompt.txt": "task"}, {"prompt.txt": "task", "reference.webp": b"not an image"},

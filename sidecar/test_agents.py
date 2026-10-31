@@ -102,7 +102,7 @@ class Parse(unittest.TestCase):
         self.assertFalse({"--allowedTools", "--tools", "--disable-slash-commands"} & set(t))
         with tempfile.TemporaryDirectory() as d:
             mcp = os.path.join(d, "m.json")
-            with open(mcp, "w") as f:
+            with open(mcp, "w", encoding="utf-8") as f:
                 json.dump({"mcpServers": {"figcraft": {"command": "/usr/bin/python3", "args": ["bridge.py", "--doc", "k"]}}}, f)
             x = AGENTS["codex"].command("gpt-6-luna", "t1", mcp, "sys", "figcraft")
             y = AGENTS["codex"].command("gpt-6-luna", None, mcp, "sys", "figcraft", images=["/tmp/a.png"])
@@ -133,9 +133,9 @@ class Parse(unittest.TestCase):
             for d, f in ((".claude-second", ".credentials.json"), (".claude-work", ".claude.json"), (".claude-empty", None)):
                 os.makedirs(os.path.join(home, d))
                 if f:
-                    open(os.path.join(home, d, f), "w").close()
+                    open(os.path.join(home, d, f), "w", encoding="utf-8").close()
             rc = os.path.join(home, ".bashrc")
-            with open(rc, "w") as f:
+            with open(rc, "w", encoding="utf-8") as f:
                 f.write("alias ll='ls -l'\nalias claude-2='CLAUDE_CONFIG_DIR=\"$HOME/.claude-second\" claude'\n"
                         "alias claude='claude --verbose'\n")
             accs = {a.id: a for a in claude_accounts([rc], home)}
