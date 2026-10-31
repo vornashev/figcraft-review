@@ -134,6 +134,22 @@ def start_server():
         time.sleep(0.1)
 
 
+def server_pid():
+    """The pid of the server this launcher started, while it runs."""
+    try:
+        with open(PIDFILE, encoding="utf-8") as f:
+            pid = int(f.read())
+    except (OSError, ValueError):
+        return None
+    return pid if alive(pid) else None
+
+
+def stop_server():
+    pid = server_pid()
+    if pid:
+        kill(pid)
+
+
 def browser():
     """A Chromium-family browser that can open an --app window, or None."""
     names = ["chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "brave-browser", "microsoft-edge"]
@@ -147,11 +163,6 @@ def browser():
                   (("Google", "Chrome", "Application", "chrome.exe"), ("Microsoft", "Edge", "Application", "msedge.exe"),
                    ("BraveSoftware", "Brave-Browser", "Application", "brave.exe"))]
     return next((b for b in found if b and os.path.isfile(b)), None)
-
-
-def detach(cmd):
-    flags = {"creationflags": subprocess.DETACHED_PROCESS} if WINDOWS else {"start_new_session": True}
-    subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **flags)
 
 
 def hypr_window(cls, field):
@@ -172,11 +183,11 @@ def open_chat():
         return
     app = [exe, f"--app=http://{HOST}:{PORT}/"]
     if not shutil.which("hyprctl"):
-        detach(app)
+        desktop.detach(app)
         return
     win = hypr_window(CLASS, "address")
     if not win:
-        detach(app)
+        desktop.detach(app)
         for _ in range(80):
             win = hypr_window(CLASS, "address")
             if win:

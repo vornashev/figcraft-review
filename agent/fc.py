@@ -12,6 +12,9 @@ import subprocess
 import sys
 import time
 
+import desktop
+from desktop import NO_WINDOW
+
 
 def _cli():
     if os.environ.get("FIGCRAFT_CLI"):
@@ -26,6 +29,10 @@ def _cli():
                 for v in ("ProgramW6432", "ProgramFiles", "ProgramFiles(x86)")] + [os.path.expanduser("~/bin/figcraft-cli")]:
         if os.path.isfile(exe):
             return [exe]
+    # macOS: the FigCraft Review app downloads the CLI matching the installed FigCraft (sidecar/app.py)
+    fetched = glob.glob(os.path.join(desktop.state_dir(), "figcraft-cli", "*", "figcraft-cli"))
+    if fetched:
+        return [max(fetched, key=os.path.getmtime)]
     if shutil.which("figcraft"):
         return ["figcraft", "cli"]
     raise SystemExit("figcraft-cli not found: set FIGCRAFT_CLI")
@@ -44,7 +51,8 @@ class FC:
         file = file or os.environ.get("FIGCRAFT_FILE")
         port = str(port or os.environ.get("FIGCRAFT_PORT", "7979"))
         self.p = subprocess.Popen(_cli() + (["mcp"] if file else ["mcp", "--attach", port]), stdin=subprocess.PIPE,
-                                  stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding="utf-8", bufsize=1)
+                                  stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding="utf-8", bufsize=1,
+                                  **NO_WINDOW)
         self.n = 0
         self.document = None if file else document or os.environ.get("FIGCRAFT_DOCUMENT") or None
         self.rpc("initialize", {"protocolVersion": "2025-06-18", "capabilities": {},

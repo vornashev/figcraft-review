@@ -1,0 +1,7 @@
+# The tray app's dependencies, installed into the bundled Python by scripts/package.py (wheels only)
+pillow==13.0.0
+pystray==0.19.5
+six==1.17.0
+pyobjc-core==13.0 ; sys_platform == "darwin"
+pyobjc-framework-cocoa==13.0 ; sys_platform == "darwin"
+pyobjc-framework-quartz==13.0 ; sys_platform == "darwin"

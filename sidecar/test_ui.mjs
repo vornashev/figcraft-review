@@ -83,6 +83,13 @@ const STATE = {doc: {path: "/d/x.figcraft", name: "x"}, selection: [], stale: fa
   agents: [{id: "claude", name: "Claude Code", ok: true, path: "/bin/claude", version: "2.1", models: [{id: "claude-opus-5-5", name: "Opus 5.5"}]}]};
 await js(`__emit({type: "state", state: ${JSON.stringify(STATE)}}); true`);
 
+await js(`__api.length = 0; __emit({type: "state", state: {...${JSON.stringify(STATE)}, update: {version: "9.0.0", url: "https://example/v9", auto: true}}}); true`); await sleep(30);
+check("a newer release shows a banner that installs it", await js("[document.querySelector('[data-update]')?.dataset.update, document.querySelector('[data-update-install]')?.textContent]"), ["9.0.0", "Обновить"]);
+await js("document.querySelector('[data-update-install]').click(); true"); await sleep(30);
+check("its button asks the server to update", await js("__api.map(c => c[0]).filter(u => u === '/api/update').length"), 1);
+await js(`__emit({type: "state", state: ${JSON.stringify(STATE)}}); true`); await sleep(30);
+check("without an update there's no banner", await js("!!document.querySelector('[data-update]')"), false);
+
 // Check the font Chromium actually uses for the text (the bundled Golos, not a system fallback); icons are SVG.
 await js("document.fonts.ready.then(() => true)");
 await send("DOM.enable"); await send("CSS.enable");

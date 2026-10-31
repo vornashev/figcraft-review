@@ -55,6 +55,7 @@ export type ServerState = {
   running: {chat: string; file?: string; lane?: number}[]; chats: ChatSummary[]; modes: string[]; settings: Settings; agents: Agent[];
   skills?: Skill[]; skillDefaults?: string[]; designMd?: {exists: boolean};
   opendesign?: Download;
+  update?: {version: string; url: string; auto: boolean} | null;  // a newer release; auto: the app installs it
 };
 // OpenDesign's import (it isn't shipped): progress of skills/opendesign.py run by the server.
 export type Download = {running: boolean; done: number; total: number; error: string | null};

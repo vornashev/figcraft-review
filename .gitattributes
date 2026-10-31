@@ -5,3 +5,5 @@
 *.png binary
 *.figcraft binary
 *.wasm binary
+*.ico binary
+*.iss text eol=crlf

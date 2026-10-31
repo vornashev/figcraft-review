@@ -42,6 +42,8 @@ The version lives in `Cargo.toml`, `figcraft-plugin.json` and `sidecar/web/packa
    - runs the tests (the FigCraft suite too when `FIGCRAFT_TEST_FILE` is set)
    - commits «Release v0.6.0» and tags it
 2. Check the commit, then push it: `git push origin main v0.6.0`.
-3. The **Release** workflow builds the plugin and the chat page, then packages the plugin zip and the Linux, macOS and Windows bundles. It smoke-tests each bundle on its own OS, then publishes a GitHub release with the CHANGELOG section as notes, plus `SHA256SUMS` and build provenance.
+3. The **Release** workflow builds the plugin and the chat page, then packages the plugin zip, the Linux, macOS and Windows bundles, and the apps: the Windows setup (Inno Setup) and the macOS `.dmg` for arm64 and x64, each with Python from `packaging/runtime.json`. It smoke-tests each bundle and app on its own OS: the setup is installed silently, `app.py --check` starts the chat's server, and the setup is uninstalled. Then it publishes a GitHub release with the CHANGELOG section as notes, plus `SHA256SUMS` and build provenance.
+
+To try the installers without a release, run the **Release** workflow by hand (Actions ▸ Release ▸ Run workflow): it builds and tests every asset and keeps them as workflow artifacts, without publishing.
 
 Versions follow SemVer while still 0.x. A new feature or a change to the CLI, label or export format bumps the minor version; a fix bumps the patch.

@@ -17,6 +17,7 @@ import os
 import queue
 import re
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -31,6 +32,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "agent"))
 import desktop  # noqa: E402
 import review  # noqa: E402
 import skills  # noqa: E402
+import update  # noqa: E402
 from agents import AGENTS, MODES, short  # noqa: E402
 from control import Control  # noqa: E402
 from fc import FC  # noqa: E402
@@ -54,6 +56,7 @@ STATE = desktop.state_dir()
 CHATS_DIR, IMAGES, SHOTS = (os.path.join(STATE, d) for d in ("chats", "images", "shots"))
 OLD_CHATS, SETTINGS = os.path.join(STATE, "chats.json"), os.path.join(STATE, "settings.json")
 BRIDGE = os.path.join(HERE, "bridge.py")
+APP_PORT = int(os.environ.get("FIGCRAFT_APP_PORT", "7981"))  # sidecar/app.py, the tray app that installs updates
 OPENDESIGN = os.path.join(os.path.dirname(HERE), "skills", "opendesign.py")  # not shipped: the importer fetches it
 HOST = "figcraft-agent.localhost"  # the window's own host, so Hyprland sees it as its own app (Chromium resolves *.localhost)
 KEEP_MESSAGES = 300  # per chat; older ones are dropped when it is saved
@@ -348,6 +351,7 @@ class App:
         self.index = {"key": None, "at": 0, "layers": [], "building": False}
         self.skill_snapshot = None
         self.opendesign = {"running": False, "done": 0, "total": 0, "error": None}
+        self.update = None  # a newer release: {version, url, auto}, auto when the app installs it in one click
         self.ctl = None  # the control channel: what the designer does to comments must not be signed as an agent
 
     # ---- storage ----
@@ -406,7 +410,7 @@ class App:
         return {"doc": self.doc, "selection": self.selection, "agents": self.agent_list(), "settings": self.settings,
                 "modes": MODES, "stale": self.stale, "chats": sorted(here, key=lambda c: -c["updated"]),
                 "running": self.running(), "designMd": self.design_md_state(), "skills": self.skill_list(),
-                "opendesign": self.opendesign,
+                "opendesign": self.opendesign, "update": self.update,
                 "skillDefaults": self.settings.get("fileSkills", {}).get(self.doc.get("path") or "", [])}
 
     def skill_catalog(self, file=None):
@@ -463,10 +467,9 @@ class App:
 
     def run_opendesign(self):
         last, error = "", None
-        flags = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
         try:
             p = subprocess.Popen([sys.executable, OPENDESIGN], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                                 encoding="utf-8", errors="replace", env={**os.environ, "PYTHONIOENCODING": "utf-8"}, **flags)
+                                 encoding="utf-8", errors="replace", env={**os.environ, "PYTHONIOENCODING": "utf-8"}, **desktop.NO_WINDOW)
             for line in p.stdout:
                 m = re.match(r"(\d+)/(\d+)", line)
                 if m:
@@ -482,6 +485,27 @@ class App:
         self.skill_snapshot = self.skill_list()
         self.push({"type": "skills", "skills": self.skill_snapshot})
         self.push({"type": "state", "state": self.state()})
+
+    def check_update(self):
+        found = update.summary(update.check())  # GitHub is asked at most once a day
+        if found != self.update:
+            self.update = found
+            self.push({"type": "state", "state": self.state()})
+
+    def install_update(self, body):
+        """The tray app downloads and installs it (it restarts this server); otherwise the release page opens."""
+        if not self.update:
+            raise ValueError("Обновлений нет")
+        if self.update["auto"]:
+            try:
+                with socket.create_connection(("127.0.0.1", APP_PORT), timeout=3) as s:
+                    s.sendall(b"update\n")
+                    if s.makefile().readline().strip() == "ok":
+                        return {"ok": True}
+            except OSError:
+                pass
+        desktop.open_path(self.update["url"])
+        return {"ok": True, "opened": self.update["url"]}
 
     def design_md_state(self):
         if not self.doc.get("path"):
@@ -560,6 +584,8 @@ class App:
                 if catalog != self.skill_snapshot:
                     self.skill_snapshot = catalog
                     self.push({"type": "skills", "skills": catalog})
+            if n % 3600 == 5:
+                threading.Thread(target=self.check_update, daemon=True).start()
             if n % 60 == 0:
                 self.guests.reap({(v[1], v[2]) for v in self.procs.values()})
 
@@ -1042,7 +1068,7 @@ class App:
         except Exception:
             before = None
         mcp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
-        json.dump({"mcpServers": {"figcraft": {"command": sys.executable, "args": [
+        json.dump({"mcpServers": {"figcraft": {"command": desktop.windowless_python(), "args": [
             BRIDGE, "--doc", key_of(chat["file"]), "--slot", str(slot), "--turn", tid, "--port", str(self.port),
             "--token", self.token]}}}, mcp)
         mcp.close()
@@ -1053,7 +1079,7 @@ class App:
         try:
             p = subprocess.Popen(cmd, cwd=os.path.dirname(chat["file"]) or HERE, stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace", bufsize=1,
-                                 env=agent_env(agent, chat["file"]))
+                                 env=agent_env(agent, chat["file"]), **desktop.NO_WINDOW)
         except OSError as e:
             os.unlink(mcp.name)
             self.finish(chat, reply, str(e), before, guest, started, tid)
@@ -1947,6 +1973,7 @@ class Handler(BaseHTTPRequestHandler):
                   "/api/remark": APP.remark_act, "/api/comment": APP.comment_act, "/api/upload": APP.upload, "/api/skills": APP.set_skills,
                   "/api/skill-defaults": APP.skill_defaults, "/api/skill-mode": APP.set_skill_mode,
                   "/api/skill-folder": APP.skill_folder, "/api/skill-import": APP.import_skill, "/api/opendesign": APP.import_opendesign,
+                  "/api/update": APP.install_update,
                   "/api/lane": APP.lane_act, "/api/pick": APP.pick_variant, "/api/compare": APP.compare_again}
         try:
             if self.path in routes:

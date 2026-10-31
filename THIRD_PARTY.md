@@ -16,4 +16,6 @@ Not in this repository:
 
 - **OpenDesign** prompts and reference images are not licensed for redistribution. `python3 skills/opendesign.py` imports them into your own skills (`~/.config/figcraft-agent/skills`).
 
+The Windows and macOS installers carry a Python runtime from [python-build-standalone](https://github.com/astral-sh/python-build-standalone) (CPython: PSF-2.0, with the licences of its bundled libraries in `python/`), and the tray app's packages: [pystray](https://github.com/moses-palmer/pystray) (LGPL-3.0, unmodified; its source is on PyPI), [Pillow](https://github.com/python-pillow/Pillow) (MIT-CMU), six (MIT) and, on macOS, [PyObjC](https://github.com/ronaldoussoren/pyobjc) (MIT). On macOS the app downloads `figcraft-cli` from [storytold/figcraft](https://github.com/storytold/figcraft) (Apache-2.0) when it first runs.
+
 The chat page (`sidecar/web`) bundles React and React DOM (MIT), `@mdi/js` (Apache-2.0), and Golos Text and JetBrains Mono (OFL-1.1) from Fontsource. The plugin links [figcraft-plugin-sdk](https://github.com/storytold/figcraft).

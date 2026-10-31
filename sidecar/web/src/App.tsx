@@ -1,6 +1,7 @@
 // The window: the top bar, then the chat, the remarks, the settings or the skill library.
 import {useEffect} from "react";
-import {closeMenu, handoff, newChat, onKey, remarkOrder} from "./actions";
+import {closeMenu, handoff, newChat, onKey, remarkOrder, toast} from "./actions";
+import {api} from "./api";
 import {plural} from "./lib/format";
 import {shortcut} from "./lib/keyboard";
 import {answered, remarksView, set, useApp, waiting, type State} from "./store";
@@ -78,5 +79,10 @@ function Banner({s}: {s: State}) {
   if (s.S.stale || s.S.doc.error) return b("danger", "FigCraft не отвечает", "Окно свёрнуто, на другом рабочем столе или запущено без --control 7979. Агенты ждут, пока окно видно.");
   if (s.S.doc.name && !s.S.doc.path) return b("warn", "Сохраните файл", "Чаты хранятся рядом с файлом — у несохранённого их негде держать.");
   if (elsewhere) return b("info", `Агенты работают ещё в ${plural(elsewhere, ["файле", "файлах", "файлах"])}`, "Откройте файл в FigCraft, чтобы увидеть чат. Когда закончат — придёт уведомление.");
+  const up = s.S.update;
+  if (up) return <div className="banner info" data-update={up.version}><i /><div><b>Доступна версия {up.version}</b>
+    <span>{up.auto ? "Скачается и установится, приложение перезапустится." : "Скачайте её на странице релиза."}</span>
+    <div className="row"><button className="btn" data-update-install onClick={() => api("/api/update", {}).catch((e) => toast(e.message))}>
+      {up.auto ? "Обновить" : "Открыть релиз"}</button></div></div></div>;
   return null;
 }
