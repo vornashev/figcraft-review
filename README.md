@@ -26,17 +26,42 @@ Its category is the status: **Открыто** (open), **Вопрос** (questio
 | **Agent chat** (`sidecar/`) | A chat window with Claude Code, Codex or pi that edits the open file over MCP: context from the selection, undo per answer, variants, a remarks tab |
 | **Design skills** (`skills/`) | About 250 style, design-system and quality skills the chat's agents use (see [THIRD_PARTY.md](THIRD_PARTY.md)) |
 
-## Requirements
+## Install
+
+### Windows and macOS: the app
+
+1. Install [FigCraft](https://github.com/storytold/figcraft/releases) **0.13** or newer, and at least one agent CLI: [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://github.com/openai/codex) or pi.
+2. From [Releases](https://github.com/vornashev/figcraft-review/releases), download:
+   - Windows: `FigCraftReview-Setup-vX.Y.Z.exe`
+   - macOS: `FigCraftReview-vX.Y.Z-macos-arm64.dmg` (Apple silicon) or `-x64.dmg` (Intel)
+3. Run it:
+   - Windows: run the setup. It installs for you alone, without admin rights.
+   - macOS: drag **FigCraft Review** to Applications.
+4. Open **FigCraft Review**. It does the rest:
+   - starts FigCraft with its control port
+   - imports the plugin, and updates it later
+   - starts the chat
+   - adds an icon to the tray (menu bar on macOS) with the quick actions: open the chat, copy the remarks, add a remark
+
+The builds aren't signed yet, so the first start needs one extra step:
+- **Windows** says «Windows protected your PC»: click **More info ▸ Run anyway**.
+- **macOS** says the app can't be opened: open **System Settings ▸ Privacy & Security** and click **Open Anyway** beside FigCraft Review.
+
+**Updates.** The app checks GitHub once a day. When there's a new version, the tray menu and the chat offer **Обновить** (Update). The app downloads the new version, checks it against the release's `SHA256SUMS`, installs it and restarts. The extra first-start step isn't needed again.
+
+FigCraft has to run with the control port: start it from FigCraft Review, not from its own icon. If it's already open without the port, the app tells you to close it and press **Запустить FigCraft** (Start FigCraft) in the tray.
+
+What's bundled: the app carries its own Python, so there's nothing else to install. On macOS it downloads `figcraft-cli` for your FigCraft version once.
+
+### Requirements for the other ways
 
 - [FigCraft](https://github.com/storytold/figcraft/releases) **0.13** or newer, started with the control channel: `figcraft --control 7979`
 - `figcraft-cli` on `PATH`, or set `FIGCRAFT_CLI`. It comes with the Linux and Windows packages; on macOS download `figcraft-cli-<v>-macos-universal.zip`
-- Python **3.11+** (standard library only)
+- Python **3.11+** (standard library only; `pystray` and `Pillow` add the tray icon)
 - For the chat: at least one agent CLI ([Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex](https://github.com/openai/codex) or pi) and a Chromium-family browser (Chrome, Edge, Chromium or Brave) for the app window. Without one, the chat opens in the default browser
 - Node.js 20+ only when building from source
 
-## Install
-
-### From a release
+### Linux, or from a terminal
 
 Download the bundle for your OS from [Releases](https://github.com/vornashev/figcraft-review/releases) and unpack it:
 
@@ -53,7 +78,7 @@ powershell -ExecutionPolicy Bypass -File install.ps1
 
 The install script puts `figcraft-review` (the CLI) and `figcraft-agent` (the chat) on your `PATH`. It then shows where the plugin's manifest is. Import it in FigCraft with **Plugins ▸ Development ▸ Import plugin from manifest…**.
 
-If you only want the plugin, `figcraft-review-plugin-v0.5.0.zip` has the manifest and the `.wasm` module. It's the same for every OS.
+If you only want the plugin, `figcraft-review-plugin-vX.Y.Z.zip` has the manifest and the `.wasm` module. It's the same for every OS.
 
 ### From source
 

@@ -17,8 +17,11 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 
-import skills
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "agent"))
+import skills  # noqa: E402
+from desktop import NO_WINDOW  # noqa: E402
 
 MODES = ("figcraft", "terminal")  # only FigCraft (+ reading files) | the agent's own settings, as in a terminal
 
@@ -163,7 +166,7 @@ class Agent:
 
     def version(self):
         try:
-            out = subprocess.run([self.path(), "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10).stdout
+            out = subprocess.run([self.path(), "--version"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10, **NO_WINDOW).stdout
             return out.strip().splitlines()[0] if out.strip() else ""
         except (OSError, subprocess.SubprocessError, TypeError):
             return ""
@@ -344,7 +347,7 @@ class Pi(Agent):
 
     def models(self):
         try:
-            out = subprocess.run([self.path(), "--list-models"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20).stdout
+            out = subprocess.run([self.path(), "--list-models"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20, **NO_WINDOW).stdout
         except (OSError, subprocess.SubprocessError):
             return []
         rows = [line.split() for line in out.splitlines()[1:] if line.strip()]

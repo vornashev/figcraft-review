@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:  # builds and tests every asset without publishing: try the installers before a tag
 
 permissions:
   contents: read
@@ -21,7 +22,8 @@ jobs:
       - name: The tag matches every version and the CHANGELOG
         id: version
         run: |
-          v="${GITHUB_REF_NAME#v}"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then v="${GITHUB_REF_NAME#v}"
+          else v=$(python3 -c "import json; print(json.load(open('figcraft-plugin.json'))['version'])"); fi
           python3 scripts/release.py --check "$v"
           echo "version=$v" >> "$GITHUB_OUTPUT"
       - uses: dtolnay/rust-toolchain@stable
@@ -41,6 +43,77 @@ jobs:
         with:
           name: dist
           path: dist/*
+      - name: The plugin and the page, for the app installers
+        uses: actions/upload-artifact@v7
+        with:
+          name: built
+          path: |
+            target/wasm32-unknown-unknown/release/figcraft_review.wasm
+            sidecar/web/dist/index.html
+
+  windows-app:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@v8
+        with:
+          name: built
+      - run: choco install innosetup -y --no-progress
+      - run: python scripts/package.py windows-app
+      - name: Install silently, check the app, uninstall
+        shell: pwsh
+        env:
+          FIGCRAFT_AGENT_PORT: "7990"
+          FIGCRAFT_CLI: C:\nonexistent
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "FigCraft Review"
+          $setup = (Get-Item dist\FigCraftReview-Setup-v*.exe).FullName
+          Start-Process -Wait $setup -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',"/DIR=`"$dir`""
+          & "$dir\python\python.exe" "$dir\app\sidecar\app.py" --check
+          if ($LASTEXITCODE) { exit 1 }
+          & "$dir\bin\figcraft-review.cmd" --help
+          if ($LASTEXITCODE) { exit 1 }
+          Start-Process -Wait "$dir\unins000.exe" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES'
+          if (Test-Path "$dir\app") { Write-Error "the uninstaller left the app"; exit 1 }
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app-windows
+          path: dist/FigCraftReview-Setup-*.exe
+
+  macos-app:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - uses: actions/download-artifact@v8
+        with:
+          name: built
+      - run: python scripts/package.py macos-app
+      - name: Mount the image, verify the signature, check the app
+        env:
+          FIGCRAFT_AGENT_PORT: "7990"
+          FIGCRAFT_CLI: /nonexistent
+        run: |
+          mnt=$(mktemp -d)
+          hdiutil attach -nobrowse -readonly -mountpoint "$mnt" dist/FigCraftReview-v*-macos-*.dmg
+          codesign --verify --deep --strict "$mnt/FigCraft Review.app"
+          "$mnt/FigCraft Review.app/Contents/MacOS/FigCraft Review" --check
+          hdiutil detach "$mnt"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app-${{ matrix.os }}
+          path: dist/FigCraftReview-v*-macos-*.dmg
 
   smoke:
     needs: build
@@ -89,7 +162,8 @@ jobs:
           if (-not ((Invoke-WebRequest http://127.0.0.1:7990/).Content -match "<html")) { exit 1 }
 
   publish:
-    needs: [build, smoke]
+    if: github.ref_type == 'tag'
+    needs: [build, smoke, windows-app, macos-app]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -100,6 +174,11 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: dist
+          path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: app-*
+          merge-multiple: true
           path: dist
       - run: cd dist && sha256sum * > SHA256SUMS
       - uses: actions/attest-build-provenance@v4

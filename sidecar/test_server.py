@@ -785,6 +785,19 @@ class SkillLibrary(unittest.TestCase):
         self.assertEqual(entry["group"], "library")
         self.assertNotIn("dir", entry)
 
+    def test_an_update_goes_to_the_tray_app_or_opens_its_release(self):
+        from unittest.mock import patch
+        with self.assertRaises(ValueError):
+            self.app.install_update({})
+        self.app.update = {"version": "9.0.0", "url": "https://example/v9", "auto": False}
+        with patch.object(server.desktop, "open_path") as opened:
+            self.assertEqual(self.app.install_update({})["opened"], "https://example/v9")
+        opened.assert_called_once_with("https://example/v9")
+        self.app.update["auto"] = True
+        with patch.object(server, "APP_PORT", 1), patch.object(server.desktop, "open_path") as opened:
+            self.app.install_update({})  # no tray app: the release page instead
+        opened.assert_called_once()
+
     def test_opendesign_import_reports_progress_and_the_reason_it_failed(self):
         from unittest.mock import patch
         events = []

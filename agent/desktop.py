@@ -3,7 +3,9 @@
 Each one is best effort: a missing tool (no notification daemon, no zenity) is skipped, not an error.
 """
 import base64
+import glob
 import os
+import plistlib
 import shutil
 import subprocess
 import sys
@@ -11,11 +13,14 @@ import tempfile
 import threading
 
 MAC, WINDOWS = sys.platform == "darwin", sys.platform == "win32"
+# Popen flags for a console program run from a windowless app (pythonw): no console window pops up on Windows
+NO_WINDOW = {"creationflags": subprocess.CREATE_NO_WINDOW} if WINDOWS else {}
+FIGCRAFT_BUNDLE = "ai.storyteller.figcraft"  # FigCraft's macOS bundle id (its window class elsewhere)
 
 
 def _run(cmd, **kw):
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", **kw)
+        return subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", **NO_WINDOW, **kw)
     except OSError:
         return None
 
@@ -115,7 +120,7 @@ def open_path(path):
         os.startfile(path)
         return
     try:
-        subprocess.Popen(["open" if MAC else "xdg-open", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        subprocess.Popen(["open" if MAC else "xdg-open", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **NO_WINDOW)
     except OSError:
         pass
 
@@ -127,3 +132,55 @@ def terminate(p):
         _run(["taskkill", "/T", "/F", "/PID", str(p.pid)])
     else:
         p.terminate()
+
+
+def windowless_python():
+    """This Python, as pythonw on Windows: for programs others start (the MCP bridge), so no console window opens."""
+    windowless = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+    return windowless if WINDOWS and os.path.isfile(windowless) else sys.executable
+
+
+def detach(cmd, **kw):
+    """Start a program that outlives this one, without a console window."""
+    flags = {"creationflags": subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP} if WINDOWS \
+        else {"start_new_session": True}
+    kw.setdefault("stdout", subprocess.DEVNULL)
+    kw.setdefault("stderr", subprocess.DEVNULL)
+    return subprocess.Popen(cmd, stdin=subprocess.DEVNULL, **flags, **kw)
+
+
+def figcraft_app():
+    """The installed FigCraft app: (the command that starts it, followed by its arguments; its version or None),
+    or None when it isn't installed. On macOS the command is `open`, which passes the arguments on to a new instance."""
+    if MAC:
+        found = _run(["mdfind", f"kMDItemCFBundleIdentifier == '{FIGCRAFT_BUNDLE}'"])
+        apps = [a for a in (found.stdout.splitlines() if found else []) if a.endswith(".app")]
+        apps += [a for d in ("/Applications", os.path.expanduser("~/Applications")) for a in sorted(glob.glob(d + "/FigCraft*.app"))]
+        for app in apps:
+            try:
+                with open(os.path.join(app, "Contents", "Info.plist"), "rb") as f:
+                    info = plistlib.load(f)
+            except OSError:
+                continue
+            return ["open", "-a", app, "--args"], info.get("CFBundleShortVersionString")
+        return None
+    if WINDOWS:  # the MSI puts figcraft.exe in ArtCraft\FigCraft; FIGCRAFT_CLI may point beside a portable copy
+        dirs = [os.path.join(os.environ.get(v, ""), "ArtCraft", "FigCraft") for v in ("ProgramW6432", "ProgramFiles", "ProgramFiles(x86)")]
+        dirs += [os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "FigCraft")]
+        if os.environ.get("FIGCRAFT_CLI"):
+            dirs.insert(0, os.path.dirname(os.environ["FIGCRAFT_CLI"]))
+        exe = next((os.path.join(d, "figcraft.exe") for d in dirs if os.path.isfile(os.path.join(d, "figcraft.exe"))), None)
+        return ([exe], None) if exe else None
+    images = sorted(glob.glob(os.path.expanduser("~/Applications/figcraft-*.AppImage")))
+    if images:
+        return [images[-1]], None
+    return ([shutil.which("figcraft")], None) if shutil.which("figcraft") else None
+
+
+def process_running(name):
+    """Whether a process with this executable name runs (best effort: False when it can't tell)."""
+    if WINDOWS:
+        done = _run(["tasklist", "/FI", f"IMAGENAME eq {name}.exe", "/NH"])
+        return bool(done) and f"{name}.exe".lower() in done.stdout.lower()
+    done = _run(["pgrep", "-if", f"{name}[^/]*\\.app/Contents/MacOS/"] if MAC else ["pgrep", "-x", name])
+    return bool(done) and not done.returncode

@@ -12,6 +12,7 @@ import threading
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "agent"))
+from desktop import NO_WINDOW  # noqa: E402
 from fc import FC, _cli  # noqa: E402
 
 
@@ -46,7 +47,7 @@ class Guest(FC):
         self.lock = threading.Lock()
         self.used = time.time()
         self.p = subprocess.Popen(_cli() + ["mcp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                  stderr=subprocess.DEVNULL, text=True, encoding="utf-8", bufsize=1)
+                                  stderr=subprocess.DEVNULL, text=True, encoding="utf-8", bufsize=1, **NO_WINDOW)
         self.n = 0
         self.document = None
         # the name the agent's comments are signed with ("<name> (agent)"), as its cursor is named

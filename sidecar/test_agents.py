@@ -232,7 +232,8 @@ class Bridge(unittest.TestCase):
         server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Server)
         threading.Thread(target=server.serve_forever, daemon=True).start()
         self.addCleanup(server.shutdown)
-        out = subprocess.run([sys.executable, bridge.__file__, "--doc", "k", "--port", str(server.server_port), "--token", "t"],
+        from desktop import windowless_python  # pythonw on Windows: its pipes must work too
+        out = subprocess.run([windowless_python(), bridge.__file__, "--doc", "k", "--port", str(server.server_port), "--token", "t"],
                              input='{"jsonrpc":"2.0","id":1,"method":"tools/list"}\n'.encode(), capture_output=True, timeout=30,
                              env={**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"})
         self.assertEqual(out.returncode, 0, out.stderr.decode("utf-8", "replace"))

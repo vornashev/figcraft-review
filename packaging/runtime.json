@@ -1,0 +1,9 @@
+{
+  "comment": "The Python the installers carry: python-build-standalone install_only builds, checked by SHA-256",
+  "base": "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/",
+  "builds": {
+    "windows-x64": {"file": "cpython-3.13.18+20261026-x86_64-pc-windows-msvc-install_only.tar.gz", "sha256": "ebe90cc1dce2dd2d7afa1f0aa9b6c269c7c0174aeabdc6a801381602b7283424"},
+    "macos-arm64": {"file": "cpython-3.13.18+20261026-aarch64-apple-darwin-install_only.tar.gz", "sha256": "e5af2fde6a937a0e0c795a0c595c4efb70578d57463a2657c819992b9b9acbac"},
+    "macos-x64": {"file": "cpython-3.13.18+20261026-x86_64-apple-darwin-install_only.tar.gz", "sha256": "708be9e7df297f68bdae589ea9e62a621db5abe7708f79e851c41410347452d1"}
+  }
+}

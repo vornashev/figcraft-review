@@ -28,6 +28,11 @@ First public release.
   - TypeUI, tweakcn and UI UX Pro Max styles
   - a skill library with search, sources, favourites and reference previews
 - `skills/opendesign.py` imports OpenDesign's prompt bundles into your own skills; the chat's **Источники** popup runs it with **Скачать** / **Обновить** and shows the progress.
+- The FigCraft Review app for Windows (a per-user setup `.exe`) and macOS (a `.dmg` for Apple silicon and Intel), with its own Python:
+  - one click starts FigCraft with its control port, imports or updates the plugin, starts the chat and opens it
+  - a tray / menu-bar icon: open the chat, copy the remarks, add a remark, start FigCraft, updates
+  - updates from GitHub Releases in one click, checked against `SHA256SUMS`; the chat shows a banner when one is out
+  - on macOS, `figcraft-cli` for the installed FigCraft is downloaded once
 - Linux, macOS and Windows support:
   - clipboard, dialogs, notifications and process handling per OS (`agent/desktop.py`)
   - a Python launcher for the chat (`sidecar/launch.py`) with `figcraft-agent` / `figcraft-agent.cmd` wrappers
@@ -35,6 +40,7 @@ First public release.
 
 ### Fixed
 
+- Windows: agents, figcraft-cli and the MCP bridge no longer open console windows.
 - Windows: the chat's agents got no FigCraft tools ("No such tool available") because the MCP bridge wrote in the system code page and crashed on the first non-ASCII tool description (in 0.5.0-rc.1).
 
 [Unreleased]: https://github.com/vornashev/figcraft-review/commits/main
