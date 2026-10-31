@@ -848,6 +848,15 @@ check("the source filter is compact when closed",await js("[!!document.querySele
 await openSources('slash');
 check("source popup lists installed origins as checkboxes",await js("[...document.querySelectorAll('[data-source-options=slash] input[data-origin]')].map(b=>b.dataset.origin)"),['opendesign','hallmark','builtin','project','mine','pen.dev']);
 check("opening the source popup leaves the skill menu open",await js("menu?.dataset.kind"),'slash');
+await js("window.__skillsBefore=__t.get().S.skills;__api.length=0;document.querySelector('[data-source-options=slash] [data-opendesign]').click();true");await sleep(30);
+check("OpenDesign's update button downloads without toggling the source",await js("[__api.map(c=>c[0]),__t.get().slash.sources===undefined?__t.get().slashSources:__t.get().slash.sources,document.querySelector('[data-source-options=slash] [data-opendesign]').textContent]"),[['/api/opendesign'],null,'Обновить']);
+await js("__emit({type:'state',state:{...__t.get().S,opendesign:{running:true,done:5,total:230,error:null}}});true");await sleep(30);
+check("the download shows its progress",await js("[document.querySelector('[data-opendesign]').textContent,document.querySelector('[data-opendesign]').disabled]"),['5/230',true]);
+if (shot) { const r = await send("Page.captureScreenshot", {format: "png"}); fs.writeFileSync(shot + ".od-progress.png", Buffer.from(r.data, "base64")); }
+await js("__emit({type:'state',state:{...__t.get().S,skills:__t.get().S.skills.filter(k=>k.origin!=='opendesign'),opendesign:{running:false,done:0,total:230,error:'нет сети'}}});true");await sleep(30);
+check("without OpenDesign the popup offers to download it and says why the last try failed",await js("[!!document.querySelector('[data-origin-missing=opendesign]'),document.querySelector('[data-origin-missing] [data-opendesign]').textContent,document.querySelector('.source-popover-note').textContent]"),[true,'Повторить','OpenDesign: нет сети']);
+if (shot) { const r = await send("Page.captureScreenshot", {format: "png"}); fs.writeFileSync(shot + ".od-missing.png", Buffer.from(r.data, "base64")); }
+await js("__emit({type:'state',state:{...__t.get().S,skills:__skillsBefore,opendesign:undefined}});true");await sleep(30);
 const sourceOutside = await js("(()=>{const r=menu.querySelector('[data-skill-view=preview]').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()");
 await send('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...sourceOutside});
 await send('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...sourceOutside});

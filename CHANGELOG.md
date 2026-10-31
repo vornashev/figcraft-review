@@ -27,10 +27,14 @@ First public release.
   - seven design systems (Material 3, Fluent 2, Carbon, Gravity UI, Material UI, shadcn/ui, Figma Simple Design System)
   - TypeUI, tweakcn and UI UX Pro Max styles
   - a skill library with search, sources, favourites and reference previews
-- `skills/opendesign.py` imports OpenDesign's prompt bundles into your own skills.
+- `skills/opendesign.py` imports OpenDesign's prompt bundles into your own skills; the chat's **Источники** popup runs it with **Скачать** / **Обновить** and shows the progress.
 - Linux, macOS and Windows support:
   - clipboard, dialogs, notifications and process handling per OS (`agent/desktop.py`)
   - a Python launcher for the chat (`sidecar/launch.py`) with `figcraft-agent` / `figcraft-agent.cmd` wrappers
   - install scripts in the release bundles
+
+### Fixed
+
+- Windows: the chat's agents got no FigCraft tools ("No such tool available") because the MCP bridge wrote in the system code page and crashed on the first non-ASCII tool description (in 0.5.0-rc.1).
 
 [Unreleased]: https://github.com/vornashev/figcraft-review/commits/main

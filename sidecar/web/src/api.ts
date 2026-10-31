@@ -54,7 +54,10 @@ export type ServerState = {
   doc: {path?: string; name?: string; error?: string}; selection: Layer[]; stale?: boolean;
   running: {chat: string; file?: string; lane?: number}[]; chats: ChatSummary[]; modes: string[]; settings: Settings; agents: Agent[];
   skills?: Skill[]; skillDefaults?: string[]; designMd?: {exists: boolean};
+  opendesign?: Download;
 };
+// OpenDesign's import (it isn't shipped): progress of skills/opendesign.py run by the server.
+export type Download = {running: boolean; done: number; total: number; error: string | null};
 
 export async function api<T = any>(path: string, body?: unknown): Promise<T> {
   const r = await fetch(path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {});

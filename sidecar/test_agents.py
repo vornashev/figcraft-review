@@ -1,8 +1,11 @@
 """python3 -m unittest sidecar/test_agents.py — the agents' JSON lines as chat events (samples from real runs)."""
+import http.server
 import json
 import os
+import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -211,6 +214,31 @@ class Bridge(unittest.TestCase):
         names = lambda slot: [t["name"] for t in bridge.tools_for(slot)]  # noqa: E731
         self.assertEqual(names("0"), ["build", "styles", "variants", "lane"])
         self.assertEqual(names("2"), ["build", "styles"], "a lane can't start variants of its own")
+
+    def test_tools_with_non_ascii_descriptions_survive_a_windows_code_page(self):
+        """The agent reads the bridge's stdout as UTF-8: a code page (cp1252 on Windows) used to crash it on tools/list."""
+        class Server(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                msg = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+                tool = {"name": "run_command", "description": "Команда → слой", "inputSchema": {"type": "object"}}
+                body = json.dumps({"jsonrpc": "2.0", "id": msg["id"], "result": {"tools": [tool]}}).encode()
+                self.send_response(200)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *args):
+                pass
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Server)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.shutdown)
+        out = subprocess.run([sys.executable, bridge.__file__, "--doc", "k", "--port", str(server.server_port), "--token", "t"],
+                             input='{"jsonrpc":"2.0","id":1,"method":"tools/list"}\n'.encode(), capture_output=True, timeout=30,
+                             env={**os.environ, "PYTHONIOENCODING": "cp1252", "PYTHONUTF8": "0"})
+        self.assertEqual(out.returncode, 0, out.stderr.decode("utf-8", "replace"))
+        tools = json.loads(out.stdout.decode("utf-8"))["result"]["tools"]
+        self.assertEqual(tools[0]["description"], "Команда → слой")
+        self.assertIn("build", [t["name"] for t in tools])
 
 
 if __name__ == "__main__":

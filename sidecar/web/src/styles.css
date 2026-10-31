@@ -353,6 +353,11 @@ details.rclosed > summary { list-style: none; cursor: pointer; } details.rclosed
 .source-popover-actions { display: flex; flex: none; gap: 4px; padding: 4px; border-top: 1px solid var(--line); }
 .source-popover-actions [data-source-done] { margin-left: auto; }
 .source-popover-note { flex: none; padding: 2px 8px 4px; color: var(--faint); font-size: 11px; }
+.source-popover-note[data-error] { color: var(--red); overflow-wrap: anywhere; }
+.source-option .source-download { flex: none; min-height: 22px; padding: 0 8px; font-size: 11px; font-variant-numeric: tabular-nums; }
+.source-option > small + .source-download { margin-left: 2px; }
+[data-origin-missing] { cursor: default; color: var(--faint); }
+[data-origin-missing] svg { width: 12px; height: 12px; flex: none; }
 .slash-list { overflow-y: auto; min-height: 0; }
 .slash-display { display: flex; flex: none; gap: 2px; padding: 2px; border: 1px solid var(--border); border-radius: 6px; }
 .slash-display button { padding: 3px 7px; color: var(--dim); font-size: 11px; border-radius: 4px; }

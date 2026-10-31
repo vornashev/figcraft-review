@@ -785,6 +785,25 @@ class SkillLibrary(unittest.TestCase):
         self.assertEqual(entry["group"], "library")
         self.assertNotIn("dir", entry)
 
+    def test_opendesign_import_reports_progress_and_the_reason_it_failed(self):
+        from unittest.mock import patch
+        events = []
+        self.app.push = events.append
+        for code, expected in [("print('0/3'); print('3/3 · last')", None),
+                               ("print('0/3'); raise SystemExit('нет сети')", "нет сети")]:
+            script = os.path.join(self.root, "opendesign.py")
+            with open(script, "w", encoding="utf-8") as f:
+                f.write(code)
+            with patch.object(server, "OPENDESIGN", script):
+                self.app.import_opendesign({})
+                self.assertEqual(self.app.import_opendesign({})["opendesign"]["running"], True, "a second click doesn't start another")
+                for _ in range(200):
+                    if not self.app.opendesign["running"]:
+                        break
+                    time.sleep(0.02)
+            self.assertEqual(self.app.opendesign, {"running": False, "done": 3 if expected is None else 0, "total": 3, "error": expected})
+            self.assertEqual(events[-2]["type"], "skills", "the new skills reach the windows right away")
+
 
 class Storage(unittest.TestCase):
     def test_migrate_and_cap(self):

@@ -197,6 +197,7 @@ def main():
     html = args.index.read_text(encoding="utf-8") if args.index else download(SITE + "/prompts/?type=all").decode()
     entries = parse_catalog(html)
     args.cache.mkdir(parents=True, exist_ok=True)
+    print(f"0/{len(entries)}", flush=True)
     def import_one(entry):
         cached = args.cache / (entry["slug"] + ".zip")
         data = cached.read_bytes() if cached.exists() else download(f"{SITE}/prompts/{entry['slug']}/reference.zip")
@@ -205,7 +206,7 @@ def main():
         return write_skill(entry, data, args.out)
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, min(8, args.workers))) as pool:
         for n, folder in enumerate(pool.map(import_one, entries), 1):
-            if n % 25 == 0 or n == len(entries):
+            if n % 5 == 0 or n == len(entries):  # the chat's download button reads these
                 print(f"{n}/{len(entries)} · {folder.name}", flush=True)
 
 

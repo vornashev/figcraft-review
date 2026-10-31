@@ -54,6 +54,7 @@ STATE = desktop.state_dir()
 CHATS_DIR, IMAGES, SHOTS = (os.path.join(STATE, d) for d in ("chats", "images", "shots"))
 OLD_CHATS, SETTINGS = os.path.join(STATE, "chats.json"), os.path.join(STATE, "settings.json")
 BRIDGE = os.path.join(HERE, "bridge.py")
+OPENDESIGN = os.path.join(os.path.dirname(HERE), "skills", "opendesign.py")  # not shipped: the importer fetches it
 HOST = "figcraft-agent.localhost"  # the window's own host, so Hyprland sees it as its own app (Chromium resolves *.localhost)
 KEEP_MESSAGES = 300  # per chat; older ones are dropped when it is saved
 
@@ -346,6 +347,7 @@ class App:
         self.shots_swept = 0.0
         self.index = {"key": None, "at": 0, "layers": [], "building": False}
         self.skill_snapshot = None
+        self.opendesign = {"running": False, "done": 0, "total": 0, "error": None}
         self.ctl = None  # the control channel: what the designer does to comments must not be signed as an agent
 
     # ---- storage ----
@@ -404,6 +406,7 @@ class App:
         return {"doc": self.doc, "selection": self.selection, "agents": self.agent_list(), "settings": self.settings,
                 "modes": MODES, "stale": self.stale, "chats": sorted(here, key=lambda c: -c["updated"]),
                 "running": self.running(), "designMd": self.design_md_state(), "skills": self.skill_list(),
+                "opendesign": self.opendesign,
                 "skillDefaults": self.settings.get("fileSkills", {}).get(self.doc.get("path") or "", [])}
 
     def skill_catalog(self, file=None):
@@ -447,6 +450,38 @@ class App:
         s = skills.import_folder(folder)
         self.push({"type": "state", "state": self.state()})
         return {"name": s["name"], "skills": self.skill_list()}
+
+    def import_opendesign(self, body):
+        """Runs skills/opendesign.py in the background; the state carries its progress."""
+        with self.lock:
+            if self.opendesign["running"]:
+                return {"opendesign": self.opendesign}
+            self.opendesign = {"running": True, "done": 0, "total": 0, "error": None}
+        threading.Thread(target=self.run_opendesign, daemon=True).start()
+        self.push({"type": "state", "state": self.state()})
+        return {"opendesign": self.opendesign}
+
+    def run_opendesign(self):
+        last, error = "", None
+        flags = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
+        try:
+            p = subprocess.Popen([sys.executable, OPENDESIGN], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                 encoding="utf-8", errors="replace", env={**os.environ, "PYTHONIOENCODING": "utf-8"}, **flags)
+            for line in p.stdout:
+                m = re.match(r"(\d+)/(\d+)", line)
+                if m:
+                    self.opendesign = {**self.opendesign, "done": int(m[1]), "total": int(m[2])}
+                    self.push({"type": "state", "state": self.state()})
+                elif line.strip():
+                    last = line.strip()  # a traceback ends with the reason
+            if p.wait():
+                error = last or f"импорт завершился с кодом {p.returncode}"
+        except OSError as e:
+            error = str(e)
+        self.opendesign = {**self.opendesign, "running": False, "error": error and error[:300]}
+        self.skill_snapshot = self.skill_list()
+        self.push({"type": "skills", "skills": self.skill_snapshot})
+        self.push({"type": "state", "state": self.state()})
 
     def design_md_state(self):
         if not self.doc.get("path"):
@@ -1911,7 +1946,7 @@ class Handler(BaseHTTPRequestHandler):
         routes = {"/api/send": APP.send, "/api/show": APP.show_changes, "/api/undo": APP.undo_changes, "/api/allow": APP.allow,
                   "/api/remark": APP.remark_act, "/api/comment": APP.comment_act, "/api/upload": APP.upload, "/api/skills": APP.set_skills,
                   "/api/skill-defaults": APP.skill_defaults, "/api/skill-mode": APP.set_skill_mode,
-                  "/api/skill-folder": APP.skill_folder, "/api/skill-import": APP.import_skill,
+                  "/api/skill-folder": APP.skill_folder, "/api/skill-import": APP.import_skill, "/api/opendesign": APP.import_opendesign,
                   "/api/lane": APP.lane_act, "/api/pick": APP.pick_variant, "/api/compare": APP.compare_again}
         try:
             if self.path in routes:

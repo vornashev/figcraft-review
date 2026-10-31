@@ -132,7 +132,7 @@ Plugins have no clipboard access or hotkeys of their own. That's why copying and
 
 The agent edits the design through MCP. Each answer's changes are shown and undone in one click. Agents can work in several files at once: each file gets its own headless FigCraft in the app's live session, so FigCraft can stay out of sight. The chat also has a **Замечания** tab for answering and accepting remarks. See [sidecar/README.md](sidecar/README.md).
 
-More skills: `python3 skills/opendesign.py` imports OpenDesign's 230 prompt bundles into your own skills (`~/.config/figcraft-agent/skills`). They aren't licensed for redistribution, so they don't ship here.
+More skills: **Скачать** beside OpenDesign in the chat's **Источники** popup (or `python3 skills/opendesign.py`) imports OpenDesign's 230 prompt bundles into your own skills (`~/.config/figcraft-agent/skills`). They aren't licensed for redistribution, so they don't ship here.
 
 ## Development
 

@@ -1,6 +1,8 @@
 import {useEffect, useLayoutEffect, useRef, useState} from "react";
 import {createPortal} from "react-dom";
+import {api} from "../api";
 import {sourceEnabled, toggleSkillSource, type SkillSources} from "../lib/skillSources";
+import {useApp} from "../store";
 import {Icon} from "./bits";
 
 type Origin = {id: string; label: string; count: number};
@@ -11,6 +13,17 @@ export function SourceFilter({options, value, onChange, scope, back}: {options: 
   const ids = options.map((o) => o.id), enabled = options.filter((o) => sourceEnabled(value, o.id));
   const all = value === null || options.length > 0 && enabled.length === options.length;
   const summary = all ? `Все ${options.length}` : `${enabled.length}/${options.length}`;
+  const download = useApp().S.opendesign, [failed, setFailed] = useState("");
+  const missing = !ids.includes("opendesign"), error = failed || download?.error || "";
+  const fetchOpenDesign = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation(); setFailed("");
+    api("/api/opendesign", {}).catch((err) => setFailed(err.message));
+  };
+  const downloadButton = <button className="btn source-download" data-opendesign disabled={download?.running}
+    title={missing ? "Скачать промпты OpenDesign с open-design.ai в ~/.config/figcraft-agent/skills" : "Скачать новые промпты OpenDesign"}
+    onClick={fetchOpenDesign}>
+    {download?.running ? `${download.done}/${download.total || "…"}` : error ? "Повторить" : missing ? "Скачать" : "Обновить"}
+  </button>;
   const close = (restore = true) => { setOpen(false); if (restore) back ? back() : trigger.current?.focus(); };
 
   useLayoutEffect(() => { if (open) panel.current?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.focus(); }, [open]);
@@ -67,14 +80,17 @@ export function SourceFilter({options, value, onChange, scope, back}: {options: 
           onKeyDown={(e) => { if (e.key === "Enter" && !e.ctrlKey && !e.metaKey && !e.altKey) {
             e.preventDefault(); onChange(toggleSkillSource(value, o.id, ids));
           } }} />
-        <span>{o.label}</span><small>{o.count}</small>
-      </label>)}</div>
+        <span>{o.label}</span><small>{o.count}</small>{o.id === "opendesign" && downloadButton}
+      </label>)}
+      {missing && <div className="source-option" data-origin-missing="opendesign">
+        <Icon n="download" /><span>OpenDesign</span><small>не установлен</small>{downloadButton}
+      </div>}</div>
       <div className="source-popover-actions">
         <button className="btn" data-origin="all" onClick={() => onChange(null)}>Все</button>
         <button className="btn" data-source-none onClick={() => onChange([])}>Ни одного</button>
         <button className="btn" data-source-done onClick={() => close()}>Готово</button>
       </div>
-      <div className="source-popover-note">Изменения сохраняются сразу</div>
+      <div className="source-popover-note" data-error={!!error || undefined}>{error ? `OpenDesign: ${error}` : "Изменения сохраняются сразу"}</div>
     </div>, document.body)}
   </>;
 }

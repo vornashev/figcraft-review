@@ -263,6 +263,9 @@ def tools_for(slot):
 
 
 def main():
+    # MCP speaks UTF-8; Windows would otherwise use its code page and fail on the first «→» in a tool's description
+    sys.stdin.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8", newline="\n")
     slot = arg("--slot", "0")
     url = f"http://127.0.0.1:{arg('--port')}/api/mcp?doc={arg('--doc')}&slot={slot}&turn={arg('--turn', '')}"
     extra = tools_for(slot)
