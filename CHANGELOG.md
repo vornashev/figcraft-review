@@ -40,6 +40,7 @@ First public release.
 
 ### Fixed
 
+- The skill importers' TypeScript reader: TypeScript stays on 6.0, since 7 has no JS API.
 - Windows: agents, figcraft-cli and the MCP bridge no longer open console windows.
 - Windows: the chat's agents got no FigCraft tools ("No such tool available") because the MCP bridge wrote in the system code page and crashed on the first non-ASCII tool description (in 0.5.0-rc.1).
 
