@@ -409,7 +409,7 @@ def claude_accounts(rc_files=RC_FILES, home=None):
     found = {}
     for rc in rc_files:
         try:
-            with open(rc.replace("~", home, 1), encoding="utf-8", errors="replace") as f:
+            with open(home + rc[1:] if rc.startswith("~") else rc, encoding="utf-8", errors="replace") as f:
                 text = f.read()
         except OSError:
             continue

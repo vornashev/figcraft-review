@@ -1002,7 +1002,8 @@ ws.close();
 const gone = new Promise((r) => chrome.once("exit", r));
 chrome.kill();
 await gone;  // Chromium writes into its profile until it exits
-fs.rmSync(profile, {recursive: true, force: true, maxRetries: 5, retryDelay: 100});
+// Its helper processes may still write there a moment longer: a leftover temp profile isn't a failure.
+try { fs.rmSync(profile, {recursive: true, force: true, maxRetries: 20, retryDelay: 100}); } catch {}
 }
 console.log(failed ? `${failed} failed` : "all passed");
 process.exit(failed ? 1 : 0);
