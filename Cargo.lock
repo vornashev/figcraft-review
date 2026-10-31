@@ -12,7 +12,7 @@ dependencies = [
 
 [[package]]
 name = "figcraft-review"
-version = "0.5.0-rc.1"
+version = "0.5.0"
 dependencies = [
  "figcraft-plugin-sdk",
 ]

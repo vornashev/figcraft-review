@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-31
+
 First public release.
 
 ### Added
@@ -44,4 +46,5 @@ First public release.
 - Windows: agents, figcraft-cli and the MCP bridge no longer open console windows.
 - Windows: the chat's agents got no FigCraft tools ("No such tool available") because the MCP bridge wrote in the system code page and crashed on the first non-ASCII tool description (in 0.5.0-rc.1).
 
-[Unreleased]: https://github.com/vornashev/figcraft-review/commits/main
+[Unreleased]: https://github.com/vornashev/figcraft-review/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/vornashev/figcraft-review/releases/tag/v0.5.0
