@@ -1,0 +1,26 @@
+{
+  "images": [
+    {
+      "file": "assets/preview-light.webp",
+      "label": "Светлая"
+    },
+    {
+      "file": "assets/preview-dark.webp",
+      "label": "Тёмная"
+    }
+  ],
+  "links": [
+    {
+      "label": "Fluent 2 · UI-киты",
+      "url": "https://fluent2.microsoft.design/get-started/design"
+    },
+    {
+      "label": "Токены",
+      "url": "https://fluent2.microsoft.design/design-tokens"
+    },
+    {
+      "label": "Fluent 2",
+      "url": "https://fluent2.microsoft.design/"
+    }
+  ]
+}

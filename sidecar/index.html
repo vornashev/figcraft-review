@@ -1,0 +1,1748 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FigCraft Agent</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" media="print" onload="this.media='all'">
+<style>
+/* Private-use glyphs must use the icon font before the UI text fonts. */
+@font-face {
+  font-family: "FigCraft Icons";
+  src: local("JetBrainsMonoNF-Regular"), local("JetBrainsMono NF Regular"), local("JetBrainsMonoNerdFont-Regular"), local("JetBrainsMono Nerd Font");
+  unicode-range: U+E000-F8FF, U+F0000-FFFFD, U+100000-10FFFD;
+}
+:root {
+  color-scheme: dark;
+  /* Strict: the Graphite mode of the design file's Tokens collection */
+  --bg: #17181B; --rail: #121316; --card: #1F2023; --line: #27292E; --border: #34373D; --section: #121316; --inset: #121316;
+  --text: #E6E7EA; --dim: #A6A9B0; --faint: #878B94; --accent: #8E95FF; --selected: #2C2F4D; --hover: #232428;
+  --surface: #2A2C30; --highlight: #1E2031; --focus: #4C51A6; --green: #5FD38D; --red: #FF6B7A; --yellow: #F2C14E; --cyan: #6CCFF6;
+  --mauve: #C29CFF; --orange: #FF9F5A; --claude: #FF9F5A; --codex: #5FD38D; --pi: #C29CFF;
+  --sans: "FigCraft Icons", "Inter", system-ui, sans-serif;
+  --mono: "FigCraft Icons", "JetBrainsMono Nerd Font", "JetBrains Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 13px/16px var(--sans); display: flex; flex-direction: column; overflow: hidden; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; text-align: inherit; }
+kbd { font: 11px/13px var(--sans); color: var(--dim); background: var(--surface); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+small { color: var(--faint); font-size: 12px; }
+.grow { flex: 1; min-width: 0; }
+.caption { color: var(--faint); font-size: 11px; line-height: 13px; }
+/* the top bar: what is open, a new chat, settings */
+.top { display: flex; align-items: center; gap: 8px; height: 48px; flex: none; padding: 0 12px 0 16px; position: relative; }
+.chats { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; padding: 4px 6px; margin-left: -6px; border-radius: 6px; }
+.chats:hover, .chats.open { background: var(--hover); }
+.chats b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+.chats small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 100 auto; min-width: 0; }
+.wait { color: var(--mauve); font-size: 12px; white-space: nowrap; flex: none; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; font-size: 12px; line-height: 15px; color: var(--dim); white-space: nowrap; }
+.btn:hover { background: var(--hover); color: var(--text); }
+.btn.ghost { color: var(--dim); }
+.btn.line { border: 1px solid var(--border); padding: 3px 8px; }
+.btn.primary { background: var(--text); color: var(--bg); font-weight: 700; padding: 4px 10px; }
+.btn.primary:hover { background: #fff; color: var(--bg); }
+.btn:disabled { opacity: .35; cursor: default; } .btn:disabled:hover { background: none; }
+.btn.primary:disabled:hover { background: var(--text); }
+.btn.danger { color: var(--red); }
+.iconbtn { width: 28px; height: 28px; flex: none; border-radius: 6px; display: grid; place-items: center; color: var(--faint); font: 14px/1 var(--mono); }
+.iconbtn:hover { background: var(--hover); color: var(--text); }
+.menu { position: absolute; z-index: 5; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 4px;
+  box-shadow: 0 8px 24px #0006; max-height: 70vh; overflow: auto; }
+.menu .head { color: var(--faint); font-size: 11px; line-height: 13px; font-weight: 700; padding: 8px 8px 4px; display: flex; gap: 6px; align-items: center; }
+.menu .head .note { font-weight: 400; margin: 0; }
+.menu .title { display: flex; gap: 8px; align-items: center; padding: 8px; color: var(--dim); font-size: 12px; font-weight: 700; }
+.menu .title .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu .title span:last-child { font-weight: 400; color: var(--accent); }
+.menu .item { display: flex; gap: 8px; width: 100%; padding: 6px 8px; border-radius: 6px; text-align: left; align-items: center; font-size: 13px; line-height: 16px; }
+.menu .item:hover { background: var(--hover); } .menu .item.on { background: var(--surface); }
+.menu .item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu .item small { font-size: 12px; }
+.menu .item .lead { width: 14px; flex: none; text-align: center; color: var(--faint); font: 13px/16px var(--mono); }
+.menu input { width: 100%; background: var(--inset); border: 0; border-radius: 6px; padding: 7px 10px; color: var(--text); font: inherit; outline: none; }
+.mark { display: inline-block; font: 12px/16px var(--mono); flex: none; }
+.mark.claude { color: var(--claude); } .mark.codex { color: var(--codex); } .mark.pi { color: var(--pi); }
+.dot { width: 6px; height: 6px; border-radius: 3px; background: var(--green); display: inline-block; }
+.banner.info { background: #8E95FF1A; color: var(--accent); }
+.banner { margin: 0 12px 8px; padding: 8px 10px; border-radius: 8px; background: #F2C14E1A; color: var(--yellow); font-size: 12px; line-height: 15px; }
+main { flex: 1; overflow: auto; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+/* an empty chat: what to start with */
+.empty { margin-top: auto; display: flex; flex-direction: column; gap: 20px; }
+.empty .intro { display: flex; flex-direction: column; gap: 6px; }
+.empty h1 { font-size: 18px; line-height: 22px; margin: 0; } .empty p { color: var(--dim); margin: 0; }
+.start { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; display: flex; flex-direction: column; gap: 2px; }
+.start .shead { display: flex; padding: 8px 8px 6px; color: var(--dim); font-size: 12px; line-height: 15px; font-weight: 700; }
+.start .shead span:last-child { margin-left: auto; color: var(--faint); font-size: 11px; font-weight: 400; }
+.choice { display: flex; gap: 10px; padding: 8px 10px; border-radius: 6px; text-align: left; width: 100%; }
+.choice:hover { background: var(--hover); } .choice.on { background: var(--surface); }
+.choice > span:first-child { color: var(--faint); font-size: 12px; line-height: 15px; flex: none; }
+.choice b { display: block; font-weight: 400; } .choice small { display: block; margin-top: 2px; line-height: 15px; }
+.other { background: var(--inset); border-radius: 6px; padding: 8px 10px; color: var(--faint); text-align: left; width: 100%; }
+.other:hover { color: var(--dim); }
+.start .sfoot { display: flex; align-items: center; gap: 6px; padding: 8px 6px 4px 8px; }
+.start .sfoot .caption { flex: 1; }
+/* the conversation */
+.umsg { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.me { background: var(--surface); border-radius: 12px; padding: 8px 12px; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 78%; }
+.umsg .caption { display: flex; gap: 6px; }
+.umsg .caption button { color: var(--faint); text-decoration: underline; text-decoration-color: var(--border); }
+.umsg.queued .me { opacity: .75; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.chip { display: inline-flex; gap: 5px; align-items: center; background: var(--hover); border-radius: 6px; padding: 2px 7px 2px 6px; font-size: 12px; line-height: 15px; max-width: 100%; vertical-align: 1px; }
+.chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip i { font-style: normal; flex: none; }
+.chip i.sq { width: 7px; height: 7px; border-radius: 2px; background: var(--g, var(--dim)); }
+.chip i.at { color: var(--accent); font-weight: 700; font-size: 12px; }
+.chip i.ring { width: 8px; height: 8px; border-radius: 4px; border: 1.5px solid var(--orange); }
+.chip.more { background: none; border: 1px solid var(--border); color: var(--dim); }
+.chip .x { color: var(--faint); cursor: pointer; }
+.agent { display: flex; flex-direction: column; gap: 16px; }
+.fold[open] > :not(summary) { margin-top: 12px; }
+.fold > summary { color: var(--faint); font-size: 12px; line-height: 15px; cursor: pointer; list-style: none; display: flex; gap: 8px; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary::before { content: "›"; width: 8px; transition: transform .15s; }
+.fold[open] > summary::before { transform: rotate(90deg); }
+.fold > .text { color: var(--dim); }
+.steps { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 4px; display: flex; flex-direction: column; }
+.step { display: flex; gap: 8px; align-items: center; padding: 5px 8px; border-radius: 6px; font-size: 12px; line-height: 15px; min-width: 0; }
+.step i { font-style: normal; font-weight: 700; width: 11px; flex: none; text-align: center; }
+.step.ok i { color: var(--green); } .step.error i { color: var(--red); } .step.stopped i { color: var(--faint); }
+.step.run { background: var(--hover); }
+.step.run i::before { content: ""; display: block; width: 10px; height: 10px; box-sizing: border-box; border-radius: 5px; border: 1.5px solid var(--accent); }
+.step .name { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step code { flex: 1; min-width: 0; color: var(--faint); font: 11px/15px var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.step.error code { color: var(--red); }
+.step .time { color: var(--faint); font-size: 11px; flex: none; font-variant-numeric: tabular-nums; }
+.step.run .time { color: var(--accent); }
+.text { white-space: normal; overflow-wrap: anywhere; } .text p { margin: 0 0 8px; } .text > :last-child { margin-bottom: 0; }
+.text code { background: var(--inset); padding: 0 4px; border-radius: 4px; font: 12px var(--mono); }
+.text ul { margin: 0 0 8px; padding-left: 18px; }
+.error { color: var(--red); font-size: 12px; line-height: 15px; white-space: pre-wrap; }
+.typing { color: var(--faint); font-size: 12px; display: flex; gap: 8px; align-items: center; }
+.typing::before { content: ""; width: 10px; height: 10px; border-radius: 5px; border: 1.5px solid var(--accent); border-right-color: transparent; animation: spin 1s linear infinite; }
+/* the input: one line when empty; attachments, text and a bottom row once there is something */
+.composer { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; position: relative; flex: none; }
+.pinned { display: flex; gap: 6px; align-items: center; padding: 0 6px; font-size: 11px; line-height: 13px; color: var(--faint); }
+.pinned b { color: var(--dim); font-weight: 400; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.pinned b:hover { color: var(--text); }
+.pinned button { color: var(--faint); } .pinned button:hover { color: var(--text); }
+.box { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 10px 10px 12px;
+  display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "att att att" "ed ed ed" "plus hint send"; gap: 10px; align-items: center; }
+.box:focus-within { border-color: var(--focus); }
+.box.compact { grid-template-columns: 1fr auto auto; grid-template-areas: "ed hint send"; gap: 8px; padding-left: 14px; }
+.box.compact #attachBtn, .box.compact #attachments { display: none; }
+.box:not(.compact) ~ .modelrow #attachBtn2 { display: none; }
+.box.error { border-color: var(--red); }
+#attachments { grid-area: att; } .editor { grid-area: ed; } #attachBtn { grid-area: plus; } #boxHint { grid-area: hint; } #sendBtn { grid-area: send; }
+.editor { position: relative; color: var(--text); outline: none; min-height: 16px; max-height: 128px; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 16px; }
+.editor.empty::before { content: attr(data-placeholder); color: var(--faint); position: absolute; pointer-events: none; white-space: nowrap; }
+.editor .chip, .me .chip { line-height: 15px; margin: 0 1px; user-select: all; }
+.editor .chip { cursor: default; } .editor .chip::selection, .editor .chip *::selection { background: var(--selected); }
+.editor .chip.image, .editor .chip.file { display: none; }
+.plus { color: var(--dim); font: 14px/18px var(--mono); width: 14px; text-align: center; }
+.plus:hover { color: var(--text); }
+#boxHint { color: var(--faint); font-size: 11px; line-height: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#boxHint.warn { color: var(--yellow); } #boxHint.bad { color: var(--red); }
+.boxnote { color: var(--faint); font-size: 11px; white-space: nowrap; }
+.compact-row { display: flex; align-items: center; gap: 8px; }
+.send { width: 28px; height: 28px; border-radius: 14px; background: var(--text); color: var(--bg); display: grid; place-items: center; font: 700 13px/1 var(--sans); }
+.send:disabled { opacity: .35; cursor: default; }
+.send.stop::before { content: ""; width: 10px; height: 10px; border-radius: 2px; background: var(--bg); }
+.drop { position: absolute; inset: -1px; z-index: 2; border-radius: 12px; border: 1px solid var(--accent); background: var(--highlight);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; pointer-events: none; }
+.drop small { font-size: 12px; }
+.modelrow { display: flex; align-items: center; gap: 12px; padding: 0 6px; min-height: 18px; }
+.modelrow .plus { margin-right: -2px; }
+.picker { display: inline-flex; gap: 5px; align-items: center; border-radius: 4px; font-size: 12px; line-height: 15px; color: var(--faint); }
+.picker b { color: var(--text); } .picker:hover b, .picker.open b { text-decoration: underline; text-decoration-color: var(--border); }
+.modelrow .mode { color: var(--dim); font-size: 12px; line-height: 15px; flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.modelrow .mode:hover { color: var(--text); }
+.hint { color: var(--faint); font-size: 11px; line-height: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+button.hint:hover { color: var(--dim); }
+.settings { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.settings .body { flex: 1; overflow: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 22px; }
+.group { display: flex; flex-direction: column; gap: 8px; }
+.group > .gt { color: var(--faint); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.list { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.agentrow { display: flex; gap: 10px; align-items: center; padding: 10px 12px; }
+.agentrow + .agentrow { border-top: 1px solid var(--line); }
+.agentrow .mark { width: 28px; height: 28px; font-size: 12px; border-radius: 7px; }
+.agentrow .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.agentrow .info small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.agentrow .count { color: var(--dim); font-size: 10px; white-space: nowrap; }
+.radio { display: flex; gap: 10px; align-items: flex-start; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); text-align: left; }
+.radio.on { background: var(--surface); }
+.radio .r { width: 12px; height: 12px; border-radius: 6px; border: 1.5px solid var(--border); flex: none; margin-top: 2px; }
+.radio.on .r { border: 3.5px solid var(--text); }
+.radio small { font-size: 11px; display: block; margin-top: 2px; }
+.store { display: flex; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.foot { color: var(--faint); font-size: 10px; padding: 0 14px 14px; }
+.btn kbd { font-size: 11px; }
+.text.streaming > :last-child::after { content: "▍"; color: var(--accent); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+/* what an answer changed, marked and lacked; what it took */
+.changed { display: flex; flex-direction: column; gap: 2px; }
+.changed .chead { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; font-size: 12px; line-height: 15px; }
+.changed .chead b { color: var(--dim); white-space: nowrap; } .changed .chead small { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.change { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; line-height: 15px; min-width: 0; }
+.change > i { font-style: normal; font-weight: 700; width: 9px; flex: none; color: var(--yellow); } .change.removed > i { color: var(--red); }
+.change .name { flex: none; max-width: 50%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.change small { flex: 1; min-width: 0; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.change code { color: var(--faint); font: 11px var(--mono); }
+.changes { display: flex; gap: 8px; align-items: center; font-size: 12px; line-height: 15px; }
+.changes .grow { flex: 1; } .changes i { font-style: normal; font-weight: 700; color: var(--green); }
+.stats { font-size: 12px; color: var(--faint); }
+.stats summary { cursor: pointer; list-style: none; display: flex; gap: 6px; line-height: 15px; } .stats summary::-webkit-details-marker { display: none; }
+.stats summary::after { content: "⌄"; } .stats[open] summary::after { content: "⌃"; }
+.stats dl { display: grid; grid-template-columns: 1fr auto; gap: 3px 16px; margin: 6px 0 0; background: var(--inset); border-radius: 6px; padding: 8px 10px; font-size: 11px; }
+.stats dt { color: var(--faint); } .stats dd { margin: 0; text-align: right; font: 11px var(--mono); color: var(--dim); }
+.deny { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 12px; line-height: 15px; display: flex; flex-direction: column; gap: 8px; }
+.deny b { color: var(--yellow); } .deny code { color: var(--dim); font: 11px var(--mono); }
+.deny .row { flex-wrap: nowrap; } .deny .row .caption { flex: 1; }
+.skills { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--faint); }
+/* pictures and files: in a message, in the input, in the viewer */
+.thumbs { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; white-space: normal; }
+.umsg .thumbs .picture { width: 112px; height: 84px; }
+.step-shots { justify-content: flex-start; padding: 2px 8px 6px 27px; }
+.step-shots:empty { display: none; }
+.step-shots .picture { width: auto; max-width: 100%; height: 96px; }
+.step-shots .picture img { width: auto; max-width: 100%; object-fit: contain; }
+.picture { position: relative; width: 56px; height: 56px; padding: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; flex: none; background: var(--inset); }
+.picture img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.picture:hover, .picture:focus-visible { border-color: var(--dim); outline: none; }
+.pic-number { position: absolute; left: 3px; bottom: 3px; min-width: 13px; padding: 0 4px; border-radius: 4px; background: var(--bg); color: var(--text); font-size: 10px; font-weight: 700; line-height: 12px; text-align: center; }
+.pic-zoom { display: none; }
+.attachments { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.attachment { position: relative; flex: none; }
+.attachment .picture { display: block; }
+.remove-image { position: absolute; right: 3px; top: 3px; border-radius: 7px; width: 14px; height: 14px; background: var(--bg); color: var(--dim); display: grid; place-items: center; font-size: 10px; font-weight: 700; line-height: 1; opacity: 0; }
+.attachment:hover .remove-image, .remove-image:focus-visible { opacity: 1; }
+.filetile { width: 158px; height: 56px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--inset); display: flex; flex-direction: column; justify-content: center; gap: 2px; text-align: left; }
+.filetile b { font-weight: 400; font-size: 12px; line-height: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filetile small { font-size: 11px; line-height: 13px; }
+.me .filetile { display: inline-flex; margin: 0 0 6px; background: var(--bg); }
+.more-tile { width: 56px; height: 56px; border: 1px solid var(--border); border-radius: 8px; background: var(--hover); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.more-tile b { font-size: 13px; } .more-tile small { font-size: 10px; line-height: 12px; }
+.uploading { width: 56px; height: 56px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--inset); }
+.uploading span { width: 14px; height: 14px; border-radius: 7px; border: 1.5px solid var(--accent); border-right-color: transparent; animation: spin 1s linear infinite; }
+.failed { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.failed .uploading { border-color: var(--red); color: var(--red); font-weight: 700; }
+.failed > div:last-child { min-width: 0; font-size: 12px; line-height: 15px; } .failed b { color: var(--red); font-weight: 400; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.failed small { font-size: 11px; } .failed button { color: var(--faint); text-decoration: underline; text-decoration-color: var(--border); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.model-picker .search { display: flex; align-items: center; gap: 6px; padding-left: 8px; background: var(--bg); border-radius: 6px; color: var(--faint); }
+.model-picker .agent-tabs { display: flex; gap: 2px; background: var(--bg); padding: 3px; border-radius: 8px; margin-top: 8px; }
+.agent-tabs button { flex: 1; min-width: 0; display: flex; justify-content: center; align-items: center; gap: 6px; border-radius: 6px; padding: 4px; font-size: 12px; color: var(--dim); }
+.agent-tabs button[aria-selected="true"] { background: var(--surface); color: var(--text); }
+.model-picker .model-status { display: flex; align-items: center; gap: 8px; padding: 12px 10px 6px; color: var(--faint); font-size: 10px; }
+.model-status > :first-child { flex: 1; text-transform: uppercase; letter-spacing: 1px; }
+.model-picker .model-row { min-height: 48px; padding: 6px 10px; }
+.model-row .grow { display: flex; flex-direction: column; }
+.model-row small { display: block; overflow: hidden; text-overflow: ellipsis; }
+.model-row .check { color: var(--accent); }
+.menu.model-picker { display: flex; flex-direction: column; overflow: hidden; }
+.model-picker .model-list { max-height: 40vh; min-height: 0; overflow: auto; }
+.model-picker > :not(.model-list) { flex-shrink: 0; }
+.model-picker .agent-tabs { overflow-x: auto; }
+.agent-tabs button { white-space: nowrap; }
+.model-picker .model-footer { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
+.viewer { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; border: 0; padding: 12px; background: color-mix(in srgb, var(--bg) 94%, transparent); color: var(--text); }
+.viewer[open] { display: flex; flex-direction: column; gap: 12px; }
+.viewer::backdrop { background: #0009; }
+.viewer header { display: flex; align-items: center; gap: 8px; }
+.viewer header > div { flex: 1; min-width: 0; }
+.viewer header b { font-size: 12px; }
+.viewer header small { display: block; }
+.viewer button, .viewer a { flex: none; color: var(--dim); border-radius: 8px; }
+.viewer .iconbtn { width: 32px; height: 32px; text-decoration: none; }
+.viewer-stage { flex: 1; min-height: 0; display: flex; align-items: center; gap: 8px; }
+.viewer-stage > button { width: 32px; height: 32px; background: var(--surface); border-radius: 50%; padding: 0; }
+.viewer-stage button:disabled { opacity: .3; cursor: default; }
+.viewer-canvas { flex: 1; min-width: 0; height: 100%; overflow: auto; display: grid; }
+.viewer-canvas img { display: block; align-self: safe center; justify-self: safe center; max-width: none; }
+.viewer-tools { display: flex; align-items: center; align-self: center; gap: 6px; background: var(--surface); border-radius: 8px; padding: 3px; }
+.viewer-tools button { padding: 3px 6px; }
+.viewer-tools output { min-width: 42px; text-align: center; font-size: 11px; }
+.viewer-strip { display: flex; gap: 8px; align-self: center; max-width: 100%; overflow: auto; padding: 2px; }
+.viewer-strip .picture { width: 48px; height: 48px; }
+.viewer-strip .current { border: 2px solid var(--accent); }
+.viewer > .hint { text-align: center; }
+.viewer-error { align-self: center; justify-self: center; color: var(--faint); }
+.toast { position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 9; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; font-size: 12px; box-shadow: 0 8px 24px #0006; }
+/* remarks: filters, groups by what they wait for, the selected one opened */
+.rtabs { display: flex; gap: 4px; padding: 0 12px 8px; border-bottom: 1px solid var(--line); flex: none; }
+.rtab { display: inline-flex; gap: 6px; padding: 4px 8px; border-radius: 6px; font-size: 12px; line-height: 15px; color: var(--dim); }
+.rtab span { color: var(--faint); } .rtab:hover { background: var(--hover); } .rtab.on { background: var(--surface); color: var(--text); }
+.remarks { flex: 1; overflow: auto; padding: 4px 8px 8px; display: flex; flex-direction: column; gap: 2px; }
+.rgroup { display: flex; align-items: center; gap: 8px; padding: 12px 8px 6px; font-size: 12px; line-height: 15px; font-weight: 700; color: var(--g); }
+.rgroup:first-child { padding-top: 10px; }
+.rgroup::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--g); }
+.rgroup span:last-child { margin-left: auto; color: var(--faint); font-weight: 400; }
+.rgroup.open { --g: var(--orange); } .rgroup.question { --g: var(--mauve); } .rgroup.review { --g: var(--green); } .rgroup.closed { --g: var(--faint); }
+.rrow { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 10px; text-align: left; width: 100%; }
+.rrow:hover { background: var(--hover); }
+.rrow .st { width: 12px; height: 12px; flex: none; margin-top: 2px; border-radius: 6px; border: 1.5px solid var(--orange); }
+.rrow .st.review, .rrow .st.done { border: 0; color: var(--green); font-weight: 700; font-size: 12px; line-height: 12px; text-align: center; }
+.rrow .st.review::before, .rrow .st.done::before { content: "✓"; }
+.rrow .st.rejected { border-color: var(--faint); }
+.rrow .st.question { border-color: var(--mauve); }
+.rtext { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.rtext > span { overflow-wrap: anywhere; } .rtext small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rid { color: var(--faint); font: 11px/15px var(--mono); flex: none; }
+.rcard { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+.rcard .rrow { padding: 0; } .rcard .rrow:hover { background: none; }
+.rcard.question { padding: 10px 4px 4px; gap: 2px; }
+.rcard.question .qhead { display: flex; gap: 10px; padding: 0 6px 6px; } .rcard.question .qhead > span:first-child { flex: 1; overflow-wrap: anywhere; }
+.rcard .choice { padding: 7px 10px; }
+.rcard input { width: 100%; background: var(--inset); border: 0; border-radius: 6px; padding: 7px 10px; color: var(--text); font: inherit; outline: none; }
+.rcard input:focus { box-shadow: inset 0 0 0 1px var(--focus); }
+.rcard .ractions { display: flex; gap: 6px; align-items: center; }
+.rcard .ractions .grow { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rcard.question .ractions { padding: 6px 4px 2px 6px; }
+.says { color: var(--dim); font-size: 12px; line-height: 15px; white-space: pre-wrap; background: var(--inset); border-radius: 6px; padding: 8px 10px; }
+.shots { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; } .shots figure { margin: 0; display: flex; flex-direction: column; gap: 4px; }
+.shots img { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; border-radius: 6px; background: var(--inset); display: block; }
+.shots .none { aspect-ratio: 4 / 3; border-radius: 6px; background: var(--inset); display: grid; place-items: center; color: var(--faint); font-size: 11px; }
+.shots figcaption { color: var(--faint); font-size: 11px; }
+.addbox { padding: 8px 8px 0; } .addbox input { width: 100%; background: var(--inset); border: 1px solid transparent; border-radius: 6px; padding: 7px 10px; color: var(--text); font: inherit; outline: none; }
+.addbox input:focus { border-color: var(--focus); }
+.rempty { color: var(--faint); font-size: 12px; padding: 24px 10px; text-align: center; }
+.rfoot { display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--line); flex: none; }
+.rfoot .caption { margin-right: 6px; }
+details.rclosed > summary { list-style: none; cursor: pointer; } details.rclosed > summary::-webkit-details-marker { display: none; }
+.gt .btn { margin-left: auto; text-transform: none; letter-spacing: 0; }
+/* skills: a group's colour on its icon; the chat's pinned ones above the input; what an answer used */
+.g-base { --g: var(--accent); } .g-style { --g: var(--mauve); } .g-system { --g: var(--cyan); } .g-platform { --g: var(--orange); }
+.g-quality { --g: var(--green); } .g-task { --g: var(--yellow); } .g-other { --g: var(--dim); }
+.menu .gi { color: var(--g, var(--mauve)); font-style: normal; }
+.chip .lv { color: var(--faint); font-size: 11px; } .chip .lv.auto { color: var(--green); }
+.menu .note { color: var(--faint); font-size: 12px; margin-left: 8px; }
+.menu .item .hint { margin-left: auto; padding-left: 8px; }
+.menu .item.more { padding-left: 28px; color: var(--dim); font-size: 12px; }
+.ctl { width: 12px; height: 12px; flex: none; border: 1.5px solid var(--border); border-radius: 3px; display: grid; place-items: center; }
+.ctl.round { border-radius: 6px; }
+.picked .ctl.check { background: var(--text); border: 0; } .picked .ctl.check::before { content: "✓"; color: var(--bg); font-size: 10px; font-weight: 700; line-height: 12px; }
+.picked .ctl.round { border: 3.5px solid var(--text); }
+.menu .src { color: var(--faint); font-size: 11px; margin-left: auto; } .menu .pin { color: var(--mauve); font: 12px var(--mono); }
+.menu .keys { display: flex; gap: 6px; align-items: center; color: var(--faint); font-size: 11px; line-height: 13px; padding: 8px 6px 4px 8px; }
+.menu .keys .btn { margin-left: auto; padding: 2px 4px; }
+.menu .sep { border-top: 1px solid var(--line); margin: 4px 0; } .menu .lead { color: var(--faint); font-size: 12px; padding: 0 8px 6px; }
+.sw { display: inline-flex; gap: 2px; } .sw i { width: 8px; height: 8px; border-radius: 2px; border: 1px solid var(--line); display: inline-block; }
+.menu .item .x { display: none; } .menu .item:hover .x { display: inline-flex; } .menu .item:hover .x ~ *, .menu .item:hover .x + * { display: none; }
+.menu .sqm, .sqm { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--mauve); }
+.spin { width: 10px; height: 10px; flex: none; border-radius: 5px; border: 1.5px solid var(--accent); }
+.menu .item .lead .mark { font-size: 12px; }
+.toggle { width: 28px; height: 16px; border-radius: 8px; background: var(--surface); position: relative; flex: none; }
+.toggle::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 6px; background: var(--faint); }
+.toggle.on { background: var(--text); } .toggle.on::after { left: 14px; background: var(--bg); }
+.group > .gt { display: flex; align-items: center; gap: 8px; }
+.skill-library { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.skill-library .top { align-items: center; }
+.skill-library .top .iconbtn { width: 40px; height: 40px; }
+.skill-library .top .titles { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.skill-library .top small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-library .body { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 18px; padding: 14px; }
+.skill-library h2 { font-size: 10px; color: var(--faint); letter-spacing: 1px; text-transform: uppercase; margin: 0 0 6px; }
+.skill-library p { margin: 0; color: var(--dim); font-size: 12px; }
+.skill-library .library-search, .skill-library input { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 100%; outline: none; }
+.skill-library input:focus { border-color: var(--accent); }
+.skill-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.skill-filters button { border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--dim); }
+.skill-filters button.on { border-color: var(--accent); background: var(--selected); color: var(--text); }
+.skill-filters small { margin-left: 4px; }
+.skill-group { color: var(--g); }
+.skill-group h2 { display: flex; gap: 6px; align-items: center; }
+.skill-group h2 i { font-style: normal; color: var(--g); }
+.skill-group h2 small { font-weight: 400; letter-spacing: 0; text-transform: none; }
+.skill-entry { display: flex; gap: 8px; align-items: center; padding: 8px 10px; }
+.skill-entry + .skill-entry { border-top: 1px solid var(--line); }
+.skill-entry > button { flex: 1; min-width: 0; text-align: left; display: flex; align-items: center; gap: 10px; padding: 0; }
+.skill-entry .entry-info { flex: 1; min-width: 0; color: var(--text); }
+.skill-entry b { font-size: 12px; }
+.skill-entry small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.skill-entry .sw { margin-left: 6px; }
+.skill-entry select { max-width: 100px; background: var(--card); color: var(--dim); border: 1px solid var(--border); border-radius: 6px; padding: 4px; font: inherit; font-size: 10px; }
+.skill-entry select.auto { color: var(--green); }
+.store select.keep { background: var(--card); color: var(--dim); border: 1px solid var(--border); border-radius: 6px; padding: 4px; font: inherit; font-size: 11px; flex: none; }
+.skill-library .footer { border-top: 1px solid var(--line); margin: 0 14px; padding: 10px 0 14px; display: flex; gap: 8px; align-items: center; }
+.skill-library .footer .grow { flex: 1; min-width: 0; }
+.skill-preview { display: flex; flex-direction: column; gap: 10px; border-radius: 10px; padding: 14px; border: 1px solid var(--border); }
+.skill-preview .sample { display: flex; gap: 10px; align-items: center; }
+.skill-preview .sample > b { font-size: 22px; }
+.skill-preview .sample span { flex: 1; font-size: 11px; }
+.skill-preview .sample em { font-style: normal; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
+.skill-palette { display: flex; gap: 6px; }
+.skill-palette > div { flex: 1; min-width: 0; }
+.skill-palette i { display: block; height: 24px; border: 1px solid var(--border); border-radius: 4px; }
+.skill-files { display: flex; flex-direction: column; gap: 4px; }
+.skill-file { display: flex; gap: 8px; align-items: baseline; color: var(--dim); font-size: 11px; }
+.skill-file > span:not(.mark) { flex: 1; overflow-wrap: anywhere; }
+.skill-library pre { background: var(--section); border: 1px solid var(--line); border-radius: 8px; padding: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11px/1.6 var(--mono); margin: 8px 0 0; }
+.skill-library .radio { width: 100%; }
+.skill-library .radio + .radio { margin-top: 6px; }
+.skill-library button:disabled, .skill-library select:disabled { opacity: .55; cursor: default; }
+.skill-library .error { white-space: normal; }
+</style>
+</head>
+<body>
+<div class="top" id="top">
+  <button class="chats" id="chatsBtn" title="Чаты и замечания файла"><b id="chatTitle">Новый чат</b><small id="docName">—</small><span class="wait" id="badge" hidden></span></button>
+  <button class="btn ghost" id="newBtn" title="Новый чат">+ Новый <kbd>⌃N</kbd></button>
+  <button class="btn primary" id="fixAll" hidden>Исправить все</button>
+  <button class="iconbtn" id="gearBtn" title="Настройки">󰒓</button>
+</div>
+<div class="rtabs" id="rtabs" hidden></div>
+<div id="banner"></div>
+<main id="main"></main>
+<div class="remarks" id="remarks" hidden></div>
+<div class="rfoot" id="rfoot" hidden><kbd>↑↓</kbd><span class="caption">выбрать</span><kbd>↵</kbd><span class="caption">исправить</span><kbd>A</kbd><span class="caption">принять</span></div>
+<div class="settings" id="settings" hidden></div>
+<section class="skill-library" id="skillLibrary" aria-label="Библиотека скиллов" hidden></section>
+<div class="composer" id="composer">
+  <div class="pinned" id="pinnedBtn" hidden></div>
+  <div class="box compact" id="box">
+    <div class="attachments" id="attachments"></div>
+    <div class="editor empty" id="input" contenteditable="true" spellcheck="false" data-placeholder="Задача. @слои. /скиллы."></div>
+    <button class="plus" id="attachBtn" title="Добавить в сообщение">+</button>
+    <span id="boxHint"></span>
+    <button class="send" id="sendBtn" title="Отправить">↑</button>
+  </div>
+  <div class="modelrow">
+    <button class="plus" id="attachBtn2" title="Добавить в сообщение">+</button>
+    <button class="picker" id="pickerBtn"></button>
+    <button class="mode" id="modeBtn" title="Доступ агента"></button>
+    <button class="hint" id="hint" tabindex="-1"></button>
+  </div>
+</div>
+<dialog class="viewer" id="viewer" aria-labelledby="viewerTitle">
+  <header><div><b id="viewerTitle"></b><small id="viewerMeta"></small></div><a class="iconbtn" id="viewerDownload" title="Скачать" aria-label="Скачать">↓</a><button class="iconbtn" id="viewerClose" title="Закрыть" aria-label="Закрыть">×</button></header>
+  <div class="viewer-stage"><button id="viewerPrev" aria-label="Предыдущая картинка">‹</button><div class="viewer-canvas" id="viewerCanvas"><img id="viewerImage" alt=""><span class="viewer-error" id="viewerError" hidden>Не удалось загрузить картинку</span></div><button id="viewerNext" aria-label="Следующая картинка">›</button></div>
+  <div class="viewer-tools"><button id="zoomOut" aria-label="Уменьшить">−</button><output id="viewerZoom"></output><button id="zoomIn" aria-label="Увеличить">+</button><button id="zoomFit">⛶ Вписать</button></div>
+  <div class="viewer-strip" id="viewerStrip"></div><div class="hint">Esc — закрыть · ← → — листать · колесо — масштаб</div>
+</dialog>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+let S = {doc: {}, selection: [], agents: [], chats: [], settings: {}, running: []};
+let chat = null, menu = null, showSettings = false, caret = null, view = "chat", mention = null;
+let R = {list: [], error: null, active: 0, pending: false, filter: "all"};  // the document's remarks
+let slash = null, slashOff = null;  // the skills menu; where Esc closed it, so typing on doesn't reopen it there
+let library = null, skillRequest = 0;
+let draftSkills = null, draftAuto = true, draftRef = "checklist";  // a chat not created yet: its pinned skills (null: the file's defaults)
+const ed = document.getElementById("input");
+const uploads = new Set();
+let draftEpoch = 0;
+const ICON = {FRAME: "#", TEXT: "T", INSTANCE: "◇", COMPONENT: "❖", COMPONENT_SET: "❖", GROUP: "▢", SECTION: "§",
+              VECTOR: "✎", RECTANGLE: "▭", ELLIPSE: "○", LINE: "╱", IMAGE: "▨"};
+const short = (s, n) => (s = String(s || "").trim()).length > n ? s.slice(0, n - 1) + "…" : s;
+const layerChip = (n) => ({kind: "layer", id: n.id, label: n.name, icon: ICON[n.type] || "•",
+                           title: `${String(n.type || "").toLowerCase()} · ${n.size || n.path || ""} · #${n.id}`});
+const remarkChip = (r) => ({kind: "remark", num: r.num, label: `#${r.num} ${short(r.text, 28)}`, icon: "󰀦", title: r.text});
+const REMARKS = {kind: "remarks", label: "Замечания", icon: "󰀦", title: "Открытые замечания из review.py"};
+const plural = (n, [one, few, many]) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? few : many}`;
+
+const familyOf = (id) => String(id || "").split(":")[0];  // claude:claude-2 is another Claude Code login
+const markOf = (id) => `<span class="mark ${familyOf(id)}">${({claude: "\uf069", codex: "X", pi: "π"})[familyOf(id)] || "?"}</span>`;
+const agentOf = (id) => S.agents.find((a) => a.id === id);
+const modelName = (a, m) => (a?.models.find((x) => x.id === m) || {name: m}).name;
+const running = () => chat && S.running.some((r) => r.chat === chat.id);
+function toast(text) {
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = text;
+  document.body.append(t);
+  setTimeout(() => t.remove(), 4000);
+}
+function chipMark(c) {  // a skill's group colour, @ for a layer, a ring for a remark
+  if (c.kind === "skill") return `<i class="sq"></i>`;
+  if (c.kind === "layer") return `<i class="at">@</i>`;
+  if (c.kind === "remark") return `<i class="ring"></i>`;
+  if (c.kind === "remarks") return `<i class="sq" style="--g:var(--orange)"></i>`;
+  return `<i>${esc(c.icon || "#")}</i>`;
+}
+const chipHtml = (c) => `<span class="chip ${c.kind}${c.group ? " g-" + c.group : ""}" title="${esc(c.title || c.label)}">${chipMark(c)}<span>${esc(c.label)}</span></span>`;
+// ---- the composer: text with layer chips inline, each chip one character for the caret ----
+
+function chipEl(c) {
+  const s = document.createElement("span");
+  s.className = "chip " + c.kind + (c.group ? " g-" + c.group : "");
+  s.contentEditable = "false";
+  if (c.name) s.dataset.name = c.name;
+  if (c.group) s.dataset.group = c.group;
+  s.dataset.kind = c.kind;
+  if (c.id != null) s.dataset.id = c.id;
+  if (c.num != null) s.dataset.num = c.num;
+  if (c.path) s.dataset.path = c.path;
+  if (c.size != null) s.dataset.size = c.size;
+  s.dataset.label = c.label;
+  s.dataset.icon = c.icon || "";
+  s.title = c.title || c.label;
+  s.innerHTML = `${chipMark(c)}<span>${esc(c.label)}</span>`;
+  return s;
+}
+function keepCaret() {
+  const s = getSelection();
+  if (s.rangeCount && ed.contains(s.anchorNode)) caret = s.getRangeAt(0).cloneRange();
+}
+document.addEventListener("selectionchange", keepCaret);
+for (const ev of ["keyup", "mouseup", "input"]) ed.addEventListener(ev, keepCaret);
+function placeCaret(r) { const s = getSelection(); s.removeAllRanges(); s.addRange(r); caret = r.cloneRange(); }
+function insertChips(list) {
+  if (!list.length) return;
+  const live = getSelection();
+  let r = document.activeElement === ed && live.rangeCount && ed.contains(live.anchorNode) ? live.getRangeAt(0)
+    : caret && ed.contains(caret.startContainer) ? caret : null;
+  ed.focus();
+  if (!r) { r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); }
+  r.deleteContents();
+  const frag = document.createDocumentFragment();
+  let last;
+  const before = r.startContainer.nodeType === 3 ? r.startContainer.data.slice(0, r.startOffset) : "";
+  if (before && !/\s$/.test(before)) frag.append(document.createTextNode(" "));
+  for (const c of list) { frag.append(chipEl(c)); last = document.createTextNode(" "); frag.append(last); }
+  r.insertNode(frag);
+  const after = document.createRange();
+  after.setStart(last, 1);
+  after.collapse(true);
+  placeCaret(after);
+  changed();
+}
+function segments() {
+  const out = [];
+  const push = (t) => {
+    if (!t) return;
+    const l = out[out.length - 1];
+    if (l?.kind === "text") l.text += t; else out.push({kind: "text", text: t});
+  };
+  const walk = (n) => {
+    for (const c of n.childNodes) {
+      if (c.nodeType === 3) push(c.data.replace(/\u200b/g, ""));
+      else if (c.dataset?.kind) out.push({kind: c.dataset.kind, id: c.dataset.id ? +c.dataset.id : undefined,
+                                          num: c.dataset.num ? +c.dataset.num : undefined, path: c.dataset.path,
+                                          size: c.dataset.size ? +c.dataset.size : undefined,
+                                          name: c.dataset.name, group: c.dataset.group,
+                                          label: c.dataset.label, icon: c.dataset.icon, title: c.title});
+      else if (c.nodeName === "BR") push("\n");
+      else { if (c.nodeName === "DIV" && out.length) push("\n"); walk(c); }
+    }
+  };
+  walk(ed);
+  if (out.length && out[out.length - 1].kind === "text") out[out.length - 1].text = out[out.length - 1].text.replace(/\s+$/, "");
+  if (out.length && out[0].kind === "text") out[0].text = out[0].text.replace(/^\s+/, "");
+  return out.filter((s) => s.kind !== "text" || s.text);
+}
+const filled = () => segments().length > 0;
+const inEditor = () => new Set(segments().filter((s) => s.kind === "layer").map((s) => s.id));
+function changed() {
+  ed.classList.toggle("empty", !ed.textContent && !ed.querySelector(".chip"));
+  if (ed.innerHTML === "<br>") ed.innerHTML = "";
+  renderComposer();
+}
+const suggested = () => S.selection.filter((n) => !n.more && !inEditor().has(n.id));
+
+function md(s) {  // enough Markdown for agent answers: paragraphs, lists, `code`, **bold**
+  const out = [];
+  let list = null;
+  for (const line of esc(s).split("\n")) {
+    const m = line.match(/^\s*[-*] (.*)/);
+    if (m) { (list ||= []).push(`<li>${inline(m[1])}</li>`); continue; }
+    if (list) { out.push(`<ul>${list.join("")}</ul>`); list = null; }
+    if (line.trim()) out.push(`<p>${inline(line)}</p>`);
+  }
+  if (list) out.push(`<ul>${list.join("")}</ul>`);
+  return out.join("");
+}
+const inline = (s) => s.replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+
+async function api(path, body) {
+  const r = await fetch(path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {});
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || r.statusText);
+  return data;
+}
+
+function render() {
+  const remarksView = view === "remarks" && !showSettings && !library;
+  $("docName").textContent = S.doc.name ? S.doc.name + (S.doc.path ? "" : " · не сохранён") : "FigCraft не открыт";
+  $("chatTitle").textContent = remarksView ? "Замечания" : chat ? chat.title : "Новый чат";
+  $("newBtn").hidden = $("gearBtn").hidden = remarksView;
+  renderBanner();
+  $("skillLibrary").hidden = !library;
+  $("settings").hidden = !showSettings || !!library;
+  $("top").hidden = showSettings || !!library;
+  $("main").hidden = $("composer").hidden = showSettings || !!library || view !== "chat";
+  $("remarks").hidden = $("rtabs").hidden = $("rfoot").hidden = !remarksView;
+  renderTabs();
+  if (library) { renderLibrary(); return; }
+  showSettings ? renderSettings() : view === "remarks" ? renderRemarks() : (renderMessages(), renderComposer());
+}
+function renderBanner() {
+  const elsewhere = new Set(S.running.filter((r) => r.file && r.file !== S.doc.path).map((r) => r.file)).size;
+  $("banner").innerHTML = showSettings ? ""
+    : S.stale || S.doc.error ? `<div class="banner">FigCraft не отвечает: его окно на другом рабочем столе, свёрнуто или приложение не запущено с --control 7979. Агенты тоже ждут, пока окно видно.</div>`
+    : S.doc.name && !S.doc.path ? `<div class="banner">Сохраните файл: чаты привязаны к файлу на диске</div>`
+    : elsewhere ? `<div class="banner info">Агенты работают ещё в ${plural(elsewhere, ["файле", "файлах", "файлах"])}: откройте файл в FigCraft, чтобы увидеть чат. Когда закончат, придёт уведомление.</div>` : "";
+}
+function renderTabs() {  // what waits for the designer, next to the file name; the remarks' own top bar
+  const n = waiting().length, remarksView = view === "remarks" && !showSettings;
+  $("badge").hidden = !n || remarksView;
+  $("badge").textContent = `${n} ждёт`;
+  $("fixAll").hidden = !remarksView || !R.list.some((r) => r.status === "open");
+}
+
+// ---- an empty chat: three ways to start, or anything else in the input ----
+
+let start = {pick: 0, off: false};
+function startChoices() {
+  const open = R.list.filter((r) => r.status === "open").length, w = waiting().length;
+  const sel = (S.selection || []).filter((n) => !n.more);
+  return [
+    {title: "Пройти по замечаниям", desc: open || w ? `${open} открыто · ${w} ждёт ответа` : "Открытых замечаний нет — агент проверит файл",
+     segs: () => [REMARKS, {kind: "text", text: " Поправь макет по открытым замечаниям"}]},
+    {title: "Проверить выделенное", desc: sel.length ? `Выделено: ${short(sel[0].name, 28)}${sel.length > 1 ? ` +${sel.length - 1}` : ""}` : "Ничего не выделено — агент спросит, что смотреть",
+     segs: () => [{kind: "text", text: "Проверь выделенное: что не так и что поправить "}, ...sel.map(layerChip)]},
+    {title: "Привести к токенам", desc: "Цвета и тексты — к переменным и стилям файла",
+     segs: () => [{kind: "text", text: "Приведи цвета и тексты к переменным и стилям файла "}, ...sel.map(layerChip)]},
+  ];
+}
+const startShown = () => view === "chat" && !showSettings && !library && !start.off && !chat?.messages?.length && !filled();
+async function startPicked(k = start.pick) {
+  const c = startChoices()[k];
+  if (!c) return;
+  try {
+    chat = await api("/api/send", sendBody(c.segs().filter((s) => s.kind !== "text" || s.text.trim())));
+    draftSkills = null; draftAuto = true; draftRef = "checklist"; start = {pick: 0, off: false};
+    render();
+  } catch (err) { toast(err.message); }
+}
+function startHtml() {
+  return `<div class="empty"><div class="intro"><h1>Что поправить в макете?</h1>
+    <p>Агент видит файл, выделение и замечания. Правки появляются на холсте сразу.</p></div>
+    ${start.off ? "" : `<div class="start" id="start"><div class="shead"><span>С чего начать</span><span>Esc</span></div>
+      ${startChoices().map((c, k) => `<button class="choice ${k === start.pick ? "on" : ""}" data-start="${k}"><span>${k + 1}</span><span><b>${esc(c.title)}</b><small>${esc(c.desc)}</small></span></button>`).join("")}
+      <button class="other" id="startOther">Что-то другое…</button>
+      <div class="sfoot"><kbd>1–3</kbd><span class="caption">выбрать</span><button class="btn primary" id="startGo">Начать ↵</button></div></div>`}</div>`;
+}
+
+// ---- the conversation ----
+
+const queued = {};  // chat id → messages typed while its agent works, sent one by one when it stops
+function renderMessages() {
+  const m = $("main");
+  if (!chat?.messages?.length) {
+    m.innerHTML = startHtml();
+    m.querySelectorAll("[data-start]").forEach((b) => b.onclick = () => { start.pick = +b.dataset.start; startPicked(); });
+    if ($("startOther")) $("startOther").onclick = () => { start.off = true; renderMessages(); ed.focus(); };
+    if ($("startGo")) $("startGo").onclick = () => startPicked();
+    return;
+  }
+  const atBottom = m.scrollHeight - m.scrollTop - m.clientHeight < 40;
+  const last = chat.messages.length - 1;
+  m.innerHTML = chat.messages.map((msg, i) => msg.role === "user" ? userHtml(msg) : agentHtml(msg, i, i === last)).join("")
+    + (queued[chat.id] || []).map((segs, k) => userHtml({segments: segs}, k)).join("");
+  if (atBottom) m.scrollTop = m.scrollHeight;
+}
+
+const fileHtml = (s) => `<span class="filetile" title="${esc(s.path)}"><b>${esc(s.label)}</b><small>${esc(fileMeta(s))}</small></span>`;
+function userHtml(msg, queue) {
+  const segs = msg.segments || [{kind: "text", text: msg.text}];
+  const pics = segs.filter((s) => s.kind === "image" && s.path), files = segs.filter((s) => s.kind === "file");
+  const body = segs.filter((s) => s.kind !== "image" && s.kind !== "file").map((s) => s.kind === "text" ? esc(s.text) : chipHtml(s)).join("");
+  return `<div class="umsg${queue != null ? " queued" : ""}">${pics.length ? `<div class="thumbs">${pics.map((s, i) => pictureHtml(s, i)).join("")}</div>` : ""}
+    ${body || files.length ? `<div class="me">${files.map(fileHtml).join("")}${body}</div>` : ""}
+    ${queue != null ? `<span class="caption">в очереди · после этого ответа <button data-unqueue="${queue}">убрать</button></span>` : ""}</div>`;
+}
+
+$("main").onclick = async (e) => {  // pictures, the queue, the buttons under an answer: show / undo the changes, allow the denied tools
+  const pic = e.target.closest("[data-picture]");
+  if (pic) {
+    const all = [...(pic.closest(".step-shots") ? pic.closest(".agent") : pic.closest(".thumbs")).querySelectorAll("[data-picture]")];
+    return openViewer(all.map((b) => JSON.parse(b.dataset.picture)), all.indexOf(pic));  // an answer's screenshots: all of them
+  }
+  const uq = e.target.closest("[data-unqueue]");
+  if (uq && chat) { queued[chat.id]?.splice(+uq.dataset.unqueue, 1); return renderMessages(); }
+  const b = e.target.closest("button[data-act]");
+  if (!b || !chat) return;
+  if (b.dataset.act === "remarks") { view = "remarks"; render(); return loadRemarks(); }
+  const i = +b.closest("[data-i]").dataset.i;
+  try {
+    if (b.dataset.act === "show") await api("/api/show", {chat: chat.id, index: i});
+    else if (b.dataset.act === "undo") { await api("/api/undo", {chat: chat.id, index: i}); toast("Правки агента отменены"); }
+    else if (b.dataset.act === "allow") chat = await api("/api/allow", {chat: chat.id, tools: JSON.parse(b.dataset.tools)});
+  } catch (err) { toast(err.message); }
+};
+
+const STATUS = {ok: "✓", error: "×", run: "", stopped: "–"};
+const clock = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function stepHtml(s) {
+  const [name, ...rest] = String(s.label).split(" · ");
+  const time = s.status === "run" ? (s.t0 ? clock(Math.max(0, Date.now() / 1000 - s.t0)) : "") : s.took != null ? `${s.took}s` : "";
+  const shots = (s.shots || []).map((path) => `<button class="picture" data-picture="${esc(JSON.stringify({path, label: s.label}))}" aria-label="Открыть снимок ${esc(s.label)}"><img src="${imageUrl(path)}" alt="${esc(s.label)}" loading="lazy" onerror="this.parentElement.remove()"></button>`).join("");
+  return `<div class="step ${s.status}"><i>${STATUS[s.status] ?? ""}</i><span class="name">${esc(name)}</span><code>${esc(rest.join(" · "))}</code><span class="time" ${s.status === "run" && s.t0 ? `data-t0="${s.t0}"` : ""}>${time}</span></div>`
+    + (shots ? `<div class="thumbs step-shots">${shots}</div>` : "");
+}
+setInterval(() => document.querySelectorAll(".step.run .time[data-t0]").forEach((t) => t.textContent = clock(Math.max(0, Date.now() / 1000 - t.dataset.t0))), 1000);
+const groupSteps = (parts) => {  // texts as they are, runs of steps in one card each
+  const out = [];
+  for (const p of parts) {
+    if (p.kind === "step") { if (out.at(-1)?.kind !== "steps") out.push({kind: "steps", list: []}); out.at(-1).list.push(p); }
+    else out.push(p);
+  }
+  return out.map((p) => p.kind === "steps" ? `<div class="steps">${p.list.map(stepHtml).join("")}</div>`
+    : `<div class="text${p.streaming ? " streaming" : ""}">${md(p.text) || "<p></p>"}</div>`).join("");
+};
+let foldOpen = new Set();  // answers whose earlier calls and messages are unfolded
+function agentHtml(msg, index, isLast) {
+  const parts = msg.parts || [];
+  const lastText = parts.findLastIndex((p) => p.kind === "text");
+  // what came before the last message folds into one line; while the agent works its latest steps stay open
+  const cut = lastText >= 0 ? lastText : msg.running ? parts.findIndex((p) => p.kind === "step") : parts.length;
+  const head = parts.slice(0, Math.max(cut, 0)), tail = parts.slice(Math.max(cut, 0));
+  const calls = head.filter((p) => p.kind === "step").length, says = head.filter((p) => p.kind === "text").length;
+  const out = [];
+  if (msg.skills?.length) {
+    out.push(`<div class="skills">Навыки${msg.skills.map((s) => `<span class="chip skill g-${esc(s.group)}" title="${esc(s.name)}"><i class="sq"></i><span>${esc(s.title)}</span>${s.level === "auto" ? `<span class="lv auto">сам</span>` : ""}</span>`).join("")}</div>`);
+  }
+  if (head.length) out.push(`<details class="fold" data-fold="${index}" ${foldOpen.has(`${chat?.id}:${index}`) ? "open" : ""}><summary>${[
+    calls && plural(calls, ["вызов", "вызова", "вызовов"]), says && plural(says, ["сообщение", "сообщения", "сообщений"])].filter(Boolean).join(" · ")}</summary>${groupSteps(head)}</details>`);
+  out.push(groupSteps(tail));
+  if (msg.running && !parts.length) out.push(`<div class="typing">Думает…</div>`);
+  if (msg.error) out.push(`<div class="error">${esc(msg.error)}</div>`);
+  const ch = msg.changes;
+  if (ch && !msg.running) {
+    const rows = (ch.layers || []).map((l) => l.removed ? `<div class="change removed"><i>−</i><span class="name">удалён</span><small></small><code>#${l.id}</code></div>`
+      : `<div class="change"><i>~</i><span class="name">${esc(l.name)}</span><small>${esc([l.top, l.type].filter(Boolean).join(" · "))}</small><code>#${l.id}</code></div>`);
+    const more = ch.ids.length - rows.length;
+    out.push(`<div class="changed"><div class="chead"><b>Изменено на холсте</b><small>${plural(ch.steps, ["шаг", "шага", "шагов"])}${ch.ids.length ? ` · ${plural(ch.ids.length, ["слой", "слоя", "слоёв"])}` : ""}</small>${ch.undone
+      ? `<small style="flex:none">Отменено</small>`
+      : `${ch.ids.length ? `<button class="btn" data-act="show">Показать</button>` : ""}<button class="btn" data-act="undo" title="edit.undo × ${ch.steps}, если поверх ничего не правили">Отменить</button>`}</div>${rows.join("")}${more > 0 && rows.length ? `<div class="change"><i></i><small>и ещё ${plural(more, ["слой", "слоя", "слоёв"])}</small></div>` : ""}</div>`);
+  }
+  if (msg.saved) out.push(`<div class="changes"><i>✓</i><span class="grow">Сохранил ${esc(msg.saved.split("/").slice(-2).join("/"))}</span></div>`);
+  if (msg.marked?.length) out.push(`<div class="changes"><i>✓</i><span class="grow">${msg.marked.map((m) =>
+    `#${m.num} → ${m.status === "review" ? "Проверь" : "Вопрос"}`).join(", ")}</span><button class="btn" data-act="remarks">Замечания ›</button></div>`);
+  if (msg.denied?.length && isLast && !msg.running) {
+    const tools = [...new Set(msg.denied.map((d) => d.tool))];
+    out.push(`<div class="deny"><b>Не хватило доступа</b>${msg.denied.map((d) => `<code>${esc(d.label)}</code>`).join("")}
+      <div class="row"><span class="caption">${esc(tools.join(", "))} — только в этом чате</span><button class="btn primary" data-act="allow" data-tools="${esc(JSON.stringify(tools))}">Разрешить и продолжить</button></div></div>`);
+  }
+  if (!msg.running && (msg.usage || msg.took || msg.cost)) out.push(statsHtml(msg));  // older answers have only the cost
+  return `<div class="agent" data-i="${index}">${out.join("")}</div>`;
+}
+document.addEventListener("toggle", (e) => {
+  const f = e.target.dataset?.fold;
+  if (f != null && chat) e.target.open ? foldOpen.add(`${chat.id}:${f}`) : foldOpen.delete(`${chat.id}:${f}`);
+}, true);
+const tokens = (n) => n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : String(n);
+const duration = (s) => s >= 60 ? `${Math.floor(s / 60)} мин ${s % 60} с` : `${s} с`;
+let statsOpen = false;
+try { statsOpen = localStorage.getItem("statsOpen") === "1"; } catch {}
+
+// What the turn took, folded under one line; open or closed, every answer follows the last choice.
+function statsHtml(msg) {
+  const u = msg.usage || {};
+  const rows = [
+    ["Стоимость", msg.cost ? `$${msg.cost.toFixed(4)}` : null],
+    ["Входящие токены", u.input],
+    ["Исходящие токены", u.output],
+    ["Чтение кэша", u.cacheRead],
+    ["Запись в кэш", u.cacheWrite],
+    ["Контекст", u.context ? `${tokens(u.context)}${u.window ? ` из ${tokens(u.window)}` : ""}` : null],
+    ["Запросов к модели", u.turns ? String(u.turns) : null],
+    ["Подготовка", msg.phases?.prep != null ? `${msg.phases.prep} с` : null],
+    ["До первого ответа", msg.phases?.first != null ? `${msg.phases.first} с` : null],
+  ].filter(([, v]) => v != null && v !== 0).map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === "number" ? tokens(v) : esc(v)}</dd>`);
+  const head = [msg.took ? `Работал ${duration(msg.took)}` : "Готово", msg.cost ? `$${msg.cost.toFixed(2)}` : ""].filter(Boolean).join(" · ");
+  return `<details class="stats" ${statsOpen ? "open" : ""}><summary>${head}</summary>${rows.length ? `<dl>${rows.join("")}</dl>` : ""}</details>`;
+}
+
+document.addEventListener("toggle", (e) => {
+  if (!e.target.classList?.contains("stats")) return;
+  statsOpen = e.target.open;
+  try { localStorage.setItem("statsOpen", statsOpen ? "1" : "0"); } catch {}
+}, true);
+
+const MODES = {figcraft: "Только FigCraft", terminal: "Как в терминале"};
+function renderComposer() {
+  renderAttachments();
+  const busy = running(), segs = segments(), live = suggested();
+  const pics = segs.filter((s) => s.kind === "image").length, files = segs.filter((s) => s.kind === "file").length;
+  const skillsN = segs.filter((s) => s.kind === "skill").length, layersN = segs.filter((s) => s.kind === "layer").length;
+  const text = segs.filter((s) => s.kind === "text").map((s) => s.text).join("");
+  const menuOpen = ["slash", "mention"].includes(menu?.dataset.kind);
+  // one line while there is only text of one line; the attachments, chips and a bottom row once there is more
+  const compact = !pics && !files && !uploads.size && !failed.length && !menuOpen && !ed.querySelector(".chip") && ed.scrollHeight <= 24 && !/\n/.test(text);
+  $("box").classList.toggle("compact", compact);
+  const pins = pinned().map((n) => skillOf(n)?.title || n);
+  $("pinnedBtn").hidden = !pins.length;
+  $("pinnedBtn").innerHTML = `<span>Закреплено в чате</span><b title="Навыки этого чата">${esc(pins.join(" · "))}</b><button data-unpin-all>снять</button>`;
+  const a = agentOf(S.settings.agent) || S.agents[0];
+  $("pickerBtn").innerHTML = a ? `${markOf(a.id)}<b>${esc(modelName(a, S.settings.model) || a.name)}</b>` : "нет агентов";
+  $("pickerBtn").title = a ? `${a.name} — модель и агент` : "";
+  $("modeBtn").textContent = MODES[S.settings.mode] || "";
+  const send = $("sendBtn");
+  send.className = "send" + (busy ? " stop" : "");
+  send.textContent = busy ? "" : "↑";
+  send.title = busy ? "Остановить — Esc" : "Отправить — Enter";
+  send.disabled = !busy && (!segs.length || uploads.size > 0);
+  const counts = [pics && plural(pics, ["картинка", "картинки", "картинок"]), files && plural(files, ["файл", "файла", "файлов"]),
+                  skillsN && plural(skillsN, ["навык", "навыка", "навыков"]), layersN && plural(layersN, ["слой", "слоя", "слоёв"])].filter(Boolean);
+  const hint = $("boxHint");
+  hint.className = "";
+  hint.textContent = compact ? (busy && segs.length ? "↵ в очередь" : "")
+    : menuOpen ? "Esc закрыть меню" : uploads.size ? "Отправка после загрузки" : busy && segs.length ? "↵ в очередь"
+    : text.length > 2000 ? plural(text.length, ["символ", "символа", "символов"]).replace(/^(\d+)(\d{3}) /, "$1 $2 ") : counts.join(" · ");
+  $("hint").textContent = busy ? "Esc остановить" : live.length ? `Tab вставить «${short(live[0].name, 20)}»${live.length > 1 ? ` +${live.length - 1}` : ""}`
+    : compact ? "" : "⇧↵ новая строка";
+  if (menu?.anchor) menu.style.bottom = innerHeight - menu.anchor.getBoundingClientRect().top + 6 + "px";  // the input grew under it
+}
+$("pinnedBtn").onclick = async (e) => {
+  e.stopPropagation();
+  if (e.target.closest("[data-unpin-all]")) { try { await setPinned([]); } catch (err) { toast(err.message); } return; }
+  if (e.target.closest("b")) { if (menu?.dataset.kind === "pinned") closeMenu(); else openPinned(); }
+};
+$("hint").onmousedown = (e) => e.preventDefault();  // keep the caret where it is
+$("hint").onclick = () => { if (!running() && suggested().length) insertChips(suggested().map(layerChip)); };
+$("modeBtn").onclick = (e) => { e.stopPropagation(); $("pickerBtn").click(); };
+// ---- remarks: what waits for the designer, what the agent has, what is accepted ----
+
+const waiting = () => R.list.filter((r) => r.status === "question" || r.status === "review");
+async function loadRemarks() {
+  if (!S.doc.name || S.stale) return;
+  try { R.list = (await api("/api/remarks")).remarks || []; R.error = null; }
+  catch (err) { R.error = err.message; }
+  renderTabs();
+  if (view === "remarks" && !showSettings) renderRemarks();
+  else if (startShown() && !library) renderMessages();  // the start card counts them
+}
+const typing = () => document.activeElement?.tagName === "INPUT" && document.activeElement.closest("#remarks");
+async function act(num, action, text) {
+  try { await api("/api/remark", {num, action, text}); }
+  catch (err) { toast(err.message); }
+}
+
+function renderRemarks() {
+  const el = $("remarks");
+  if (typing()) { R.pending = true; return; }  // don't wipe an answer being typed
+  R.pending = false;
+  renderTabs();
+  if (!S.doc.name) { $("rtabs").innerHTML = ""; el.innerHTML = `<div class="rempty">FigCraft не открыт</div>`; return; }
+  const by = (st) => R.list.filter((r) => st.includes(r.status));
+  const open = by(["open"]), questions = by(["question"]), review = by(["review"]), closed = by(["done", "rejected"]);
+  const tabs = [["all", "Все", open.length + questions.length + review.length], ["open", "Открыто", open.length],
+                ["question", "Вопросы", questions.length], ["review", "Проверь", review.length]];
+  $("rtabs").innerHTML = tabs.map(([k, l, n]) => `<button class="rtab ${R.filter === k ? "on" : ""}" data-filter="${k}">${l}<span>${n}</span></button>`).join("");
+  $("rtabs").querySelectorAll("[data-filter]").forEach((b) => b.onclick = () => { R.filter = b.dataset.filter; R.active = 0; renderRemarks(); });
+  const groups = [["open", "Открыто", open], ["question", "Ждёт вашего ответа", questions], ["review", "Проверь", review]]
+    .filter(([k, , list]) => list.length && (R.filter === "all" || R.filter === k));
+  const order = groups.flatMap(([, , list]) => list);
+  R.active = Math.min(R.active, Math.max(order.length - 1, 0));
+  const active = order[R.active];
+  const sel = S.selection.filter((n) => !n.more);
+  const meta = (r) => [r.page, r.name].filter(Boolean).join(" / ");
+  const said = (r) => r.replies.length ? r.replies[r.replies.length - 1] : null;
+  const img = (r, kind, key) => `<img src="/api/shot?num=${r.num}&kind=${kind}&key=${key || ""}" alt="">`;
+  const row = (r, extra = "") => `<button class="rrow" data-n="${r.num}" data-pick title="${esc(r.text)}"><span class="st ${r.status}"></span><span class="rtext"><span>${esc(r.text)}</span><small>${esc(extra || meta(r))}</small></span><span class="rid">#${r.num}</span></button>`;
+  const card = (r) => {
+    if (r.status === "question") return `<div class="rcard question" data-n="${r.num}"><div class="qhead"><span>${esc(r.question || said(r)?.[1] || r.text)}</span><span class="rid">#${r.num}</span></div>
+      ${r.options.map((o, k) => `<button class="choice" data-opt="${esc(o)}"><span>${k + 1}</span><span><b>${esc(o)}</b></span></button>`).join("")}
+      <input data-answer placeholder="Свой ответ…">
+      <div class="ractions"><small class="grow">${esc(meta(r))}</small><button class="btn primary" data-answer-go>Ответить ↵</button></div></div>`;
+    if (r.status === "review") {
+      const txt = said(r)?.[1] || "";
+      return `<div class="rcard" data-n="${r.num}">${row(r, txt || meta(r))}
+        <div class="shots"><figure>${r.before ? img(r, "before") : `<div class="none">нет снимка</div>`}<figcaption>было</figcaption></figure>
+          <figure>${r.after ? img(r, "after", r.after) : `<div class="none">снимаю…</div>`}<figcaption>стало</figcaption></figure></div>
+        <input data-reopen placeholder="Что не так — Enter вернёт агенту" hidden>
+        <div class="ractions"><button class="btn" data-go>Показать</button><span class="grow"></span><button class="btn" data-back>Вернуть</button><button class="btn primary" data-accept>Принять A</button></div></div>`;
+    }
+    const txt = said(r)?.[1];
+    return `<div class="rcard" data-n="${r.num}">${row(r)}${txt ? `<div class="says">${esc(said(r)[0])}: ${esc(txt)}</div>` : ""}
+      <div class="ractions"><button class="btn" data-reject>Отклонить</button><button class="btn grow" data-ask style="justify-content:flex-start">Спросить</button><button class="btn primary" data-fix>Исправить ↵</button></div></div>`;
+  };
+  el.innerHTML = `${R.error ? `<div class="error" style="padding:8px">${esc(R.error)}</div>` : ""}
+    ${sel.length ? `<div class="addbox"><input id="newRemark" placeholder="Замечание к «${esc(short(sel[0].name, 24))}»${sel.length > 1 ? ` +${sel.length - 1}` : ""} — Enter"></div>` : ""}
+    ${groups.map(([k, l, list]) => `<div class="rgroup ${k}"><span>${l}</span><span>${list.length}</span></div>${list.map((r) => r === active || r.status === "question" ? card(r) : row(r)).join("")}`).join("")}
+    ${!order.length ? `<div class="rempty">${R.list.length ? "Здесь пусто" : "Замечаний нет. Выдели слой в FigCraft, чтобы добавить замечание"}</div>` : ""}
+    ${closed.length && R.filter === "all" ? `<details class="rclosed" id="closed" ${R.showClosed ? "open" : ""}><summary class="rgroup closed"><span>Закрыто</span><span>${closed.length}</span></summary>${closed.map((r) => row(r)).join("")}</details>` : ""}`;
+  const num = (e) => +e.target.closest("[data-n]").dataset.n;
+  el.querySelectorAll("[data-pick]").forEach((b) => b.onclick = (e) => {
+    const i = order.findIndex((r) => r.num === num(e));
+    if (i >= 0 && i !== R.active) { R.active = i; renderRemarks(); }
+    act(num(e), "go");
+  });
+  el.querySelectorAll("[data-go]").forEach((b) => b.onclick = (e) => act(num(e), "go"));
+  el.querySelectorAll("[data-opt]").forEach((b) => b.onclick = (e) => act(num(e), "answer", b.dataset.opt));
+  el.querySelectorAll("[data-accept]").forEach((b) => b.onclick = (e) => act(num(e), "accept"));
+  el.querySelectorAll("[data-reject]").forEach((b) => b.onclick = (e) => act(num(e), "reject"));
+  el.querySelectorAll("[data-fix]").forEach((b) => b.onclick = (e) => fixRemark(num(e)));
+  el.querySelectorAll("[data-ask]").forEach((b) => b.onclick = (e) => askRemark(num(e)));
+  el.querySelectorAll("[data-answer-go]").forEach((b) => b.onclick = (e) => {
+    const i = e.target.closest(".rcard").querySelector("[data-answer]");
+    if (i.value.trim()) { const t = i.value.trim(); i.value = ""; act(num(e), "answer", t); }
+    else { const o = e.target.closest(".rcard").querySelector("[data-opt]"); if (o) act(num(e), "answer", o.dataset.opt); }
+  });
+  el.querySelectorAll("[data-back]").forEach((b) => b.onclick = (e) => {
+    const i = e.target.closest(".rcard").querySelector("[data-reopen]");
+    i.hidden = false; i.focus();
+  });
+  el.querySelectorAll("[data-answer], [data-reopen]").forEach((i) => {
+    i.onkeydown = (e) => {
+      if (e.key === "Escape") { i.blur(); i.value = ""; if (i.dataset.reopen !== undefined) i.hidden = true; e.stopPropagation(); }
+      if (e.key !== "Enter" || !i.value.trim()) return;
+      e.stopPropagation();  // or the page's Enter would act on the card once the field is blurred
+      const n = num(e), t = i.value.trim(), how = i.dataset.answer !== undefined ? "answer" : "reopen";
+      i.value = ""; i.blur();
+      act(n, how, t);
+    };
+    i.onblur = () => R.pending && setTimeout(renderRemarks);
+  });
+  const add = $("newRemark");
+  if (add) {
+    add.onkeydown = (e) => {
+      if (e.key === "Escape") { add.value = ""; add.blur(); }
+      if (e.key !== "Enter" || !add.value.trim()) return;
+      e.stopPropagation();
+      const t = add.value.trim(); add.value = ""; add.blur();
+      act(0, "add", t);
+    };
+    add.onblur = () => R.pending && setTimeout(renderRemarks);
+  }
+  if ($("closed")) $("closed").ontoggle = () => R.showClosed = $("closed").open;
+  R.order = order;
+}
+$("fixAll").onclick = () => handoff();
+
+async function handoff(segs = [REMARKS, {kind: "text", text: " Поправь макет по открытым замечаниям"}]) {  // to the agent, in the current chat of this file or a new one
+  try {
+    chat = await api("/api/send", sendBody(segs));
+    draftSkills = null; draftAuto = true; draftRef = "checklist";
+    view = "chat"; render();
+  } catch (err) { toast(err.message); }
+}
+const fixRemark = (n) => { const r = R.list.find((x) => x.num === n); if (r) handoff([remarkChip(r), {kind: "text", text: " Поправь это замечание"}]); };
+function askRemark(n) {  // the remark into the input, for a question of one's own
+  const r = R.list.find((x) => x.num === n);
+  if (!r) return;
+  view = "chat"; render();
+  insertChips([remarkChip(r)]);
+}
+
+function remarkKeys(e) {  // ↑ ↓ move; 1–9 picks an option; Enter fixes, answers or accepts the selected one; A accepts
+  const order = R.order || [];
+  if (!order.length || typing() || e.ctrlKey || e.altKey || e.metaKey) return;
+  const r = order[R.active];
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    R.active = (R.active + (e.key === "ArrowDown" ? 1 : order.length - 1)) % order.length;
+    renderRemarks(); $("remarks").querySelector(".rcard")?.scrollIntoView({block: "nearest"});
+  } else if (r?.status === "question" && /^[1-9]$/.test(e.key) && r.options[+e.key - 1]) act(r.num, "answer", r.options[+e.key - 1]);
+  else if (r?.status === "review" && (e.key === "Enter" || e.key.toLowerCase() === "a" || e.key.toLowerCase() === "ф")) act(r.num, "accept");
+  else if (r?.status === "open" && e.key === "Enter") fixRemark(r.num);
+  else return;
+  e.preventDefault();
+}
+setInterval(() => { if (!document.hidden) loadRemarks(); }, 8000);  // the agent changes them through review.py
+// ---- @: layers of the page and remarks, inserted as chips ----
+
+function mentionAt() {
+  const s = getSelection();
+  if (!s.rangeCount || !s.isCollapsed) return null;
+  const n = s.anchorNode, o = s.anchorOffset;
+  if (n?.nodeType !== 3 || !ed.contains(n)) return null;
+  const m = n.data.slice(0, o).match(/(^|\s)@([^\s@]{0,40})$/);
+  return m ? {node: n, start: o - m[2].length - 1, end: o, q: m[2]} : null;
+}
+let mentionTimer;
+function updateMention() {
+  const at = mentionAt();
+  if (!at) return closeMention();
+  clearTimeout(mentionTimer);
+  mentionTimer = setTimeout(async () => {
+    const r = await api("/api/search?q=" + encodeURIComponent(at.q)).catch(() => null);
+    const cur = mentionAt();
+    if (!r || !cur || cur.q !== at.q) return;
+    mention = {...cur, i: 0, items: [...r.remarks.map(remarkChip), ...r.layers.map(layerChip)], indexing: r.indexing};
+    renderMention();
+    if (r.indexing) setTimeout(updateMention, 800);
+  }, 120);
+}
+function renderMention() {
+  const it = mention.items;
+  const m = openMenu(`<div class="head">${mention.q ? `@${esc(mention.q)}` : "Слои страницы и замечания"}</div>` + (it.length ? it.map((c, k) =>
+    `<button class="item ${k === mention.i ? "on" : ""}" data-k="${k}"><span class="chip ${c.kind}" style="background:none;padding:0"><i>${esc(c.icon)}</i></span><span class="grow">${esc(c.label)}${c.kind === "layer" ? ` <small>${esc(c.title.split(" · ")[1] || "")}</small>` : ""}</span></button>`).join("")
+    : `<div class="item"><small>${mention.indexing ? "Собираю слои страницы…" : "Ничего не нашлось"}</small></div>`), $("box"));
+  m.dataset.kind = "mention";
+  renderComposer();
+  m.querySelectorAll("[data-k]").forEach((b) => {
+    b.onmousedown = (e) => e.preventDefault();
+    b.onclick = (e) => { e.stopPropagation(); chooseMention(+b.dataset.k); };
+  });
+}
+function closeMention() {
+  clearTimeout(mentionTimer);
+  if (mention && menu?.dataset.kind === "mention") closeMenu();
+  mention = null;
+}
+function chooseMention(k) {
+  const c = mention?.items[k];
+  if (!c) return closeMention();
+  const r = document.createRange();
+  r.setStart(mention.node, mention.start); r.setEnd(mention.node, mention.end);
+  closeMention();
+  ed.focus(); placeCaret(r);
+  insertChips([c]);
+}
+
+// ---- skills: / attaches some to a message, the chat pins some for every message, the agent may pick more ----
+
+const GROUPS = {base: ["Основа", "\u{f0b64}", "всегда в каждом ходе"], style: ["Стиль", "\u{f03d8}"],
+                system: ["Дизайн-система", "\u{f0832}", "одна на чат"], platform: ["Платформа", "\u{f011c}"],
+                quality: ["Качество", "\u{f05e0}"], task: ["Задачи", "\u{f0068}"], other: ["Другие", "\u{f0a66}"]};
+const EXCLUSIVE = new Set(["system"]);
+const LEVEL = {always: "всегда", chat: "чат", message: "сообщение", auto: "сам"};
+const SOURCE = {builtin: "встроенный", project: "проект", mine: "мой", "pen.dev": "pen.dev"};
+const skillOf = (n) => (S.skills || []).find((s) => s.name === n);
+const skillChip = (s) => ({kind: "skill", name: s.name, group: s.group, label: s.title, icon: (GROUPS[s.group] || GROUPS.other)[1],
+                           title: `${(GROUPS[s.group] || GROUPS.other)[0]} · ${s.summary}`});
+const pinned = () => chat ? (chat.skills || []) : (draftSkills ?? S.skillDefaults ?? []);
+const autoOn = () => chat ? chat.autoSkills !== false : draftAuto;
+const refMode = () => (chat ? chat.reference : draftRef) || "checklist";
+const REFERENCE = {checklist: ["Чек-лист", "Контент, порядок блоков и проверки. Картинку агент не открывает, вид — из файла и стилей"],
+                   inspire: ["Вдохновение", "Иерархия и ритм с картинки; палитра, шрифты и мотивы — из файла и стилей"],
+                   replicate: ["Реплика", "Композиция и вид как на картинке"]};
+const inMessage = () => [...ed.querySelectorAll(".chip.skill")].map((c) => c.dataset.name);
+const swatches = (s) => s.preview?.colors?.length ? `<span class="sw">${s.preview.colors.map((c) => `<i style="background:${esc(c)}"></i>`).join("")}</span>` : "";
+const withSkill = (names, s) => [...names.filter((n) => n !== s.name && !(EXCLUSIVE.has(s.group) && skillOf(n)?.group === s.group)), s.name];
+
+async function setPinned(names, auto, reference) {
+  if (chat) chat = await api("/api/skills", {chat: chat.id, skills: names, auto, reference});
+  else { if (names) draftSkills = names; if (auto != null) draftAuto = auto; if (reference) draftRef = reference; }
+  renderComposer();
+}
+function togglePin(s) {
+  const now = pinned();
+  return setPinned(now.includes(s.name) ? now.filter((n) => n !== s.name) : withSkill(now, s));
+}
+
+function slashAt() {
+  const s = getSelection();
+  if (!s.rangeCount || !s.isCollapsed) return null;
+  const n = s.anchorNode, o = s.anchorOffset;
+  if (n?.nodeType !== 3 || !ed.contains(n)) return null;
+  const m = n.data.slice(0, o).match(/(^|\s)\/([^\s/]{0,40})$/);
+  return m ? {node: n, start: o - m[2].length - 1, end: o, q: m[2]} : null;
+}
+function slashItems(q, open = new Set()) {  // without a query a big group shows a few, the chosen ones and «ещё N»
+  q = q.toLowerCase();
+  const all = (S.skills || []).filter((s) => s.mode !== "always"
+    && (!q || `${s.name} ${s.title} ${s.summary} ${q.length > 2 ? s.description || "" : ""}`.toLowerCase().includes(q)));
+  if (q) return all;
+  const keep = new Set([...inMessage(), ...pinned()]), out = [];
+  out.more = {};
+  for (const g of new Set(all.map((s) => s.group))) {
+    const of = all.filter((s) => s.group === g);
+    const shown = of.length > 7 && !open.has(g) ? of.filter((s, k) => k < 5 || keep.has(s.name)) : of;
+    out.push(...shown);
+    if (shown.length < of.length) out.more[g] = of.length - shown.length;
+  }
+  return out;
+}
+function updateSlash() {
+  if (slash?.mode === "pin") return;
+  const at = slashAt();
+  if (!at || (slashOff?.node === at.node && slashOff.start === at.start)) return closeSlash();
+  slash = {mode: "message", i: slash && slash.q === at.q ? slash.i : 0, touched: slash?.touched, open: slash?.open, ...at, items: slashItems(at.q, slash?.open)};
+  renderSlash();
+}
+function renderSlash() {
+  const it = slash.items, msg = slash.mode === "message";
+  const picked = new Set(msg ? inMessage() : pinned()), pins = new Set(pinned());
+  slash.i = Math.min(slash.i, Math.max(it.length - 1, 0));
+  let html = `<div class="title"><span class="grow">${msg ? "Навыки к сообщению" : "Закрепить в чате"}</span>${picked.size ? `<span>${picked.size} выбрано</span>` : ""}</div>`;
+  if (!msg) html += `<div style="padding:0 4px 4px"><input id="sq" placeholder="Найти навык…" value="${esc(slash.q)}"></div>`;
+  let group = null;
+  const more = () => it.more?.[group] ? `<button class="item more" data-more="${group}">Ещё ${it.more[group]}<span class="note">покажите все или наберите название</span></button>` : "";
+  it.forEach((s, k) => {
+    const g = GROUPS[s.group] || GROUPS.other;
+    if (s.group !== group) {
+      if (group !== null) html += more() + `<div class="sep"></div>`;
+      group = s.group;
+      html += `<div class="head g-${s.group}">${g[0]}${g[2] && s.group !== "base" ? `<span class="note">${g[2]}</span>` : ""}</div>`;
+    }
+    const on = picked.has(s.name), radio = EXCLUSIVE.has(s.group), cur = k === slash.i;
+    html += `<button class="item ${on ? "picked" : ""} ${cur ? "on" : ""}" data-k="${k}" title="${esc(s.description)}">
+      <span class="ctl ${radio ? "round" : "check"}"></span><span style="flex:none">${esc(s.title)}</span><span class="note grow">${esc(s.summary)}</span>
+      ${msg && pins.has(s.name) ? `<span class="pin" title="Закреплён в чате">\u{f0403}</span>` : ""}${swatches(s)}
+      ${cur ? `<span class="hint">${msg ? (radio || on ? "Tab закрепить" : "Space отметить") : "↵ закрепить"}</span>` : SOURCE[s.source] && s.source !== "builtin" ? `<span class="src">${SOURCE[s.source]}</span>` : ""}</button>`;
+  });
+  html += more();
+  if (!it.length) html += `<div class="lead">${slash.q ? `Нет навыка «${esc(slash.q)}». ` : ""}Навык — папка с SKILL.md: свои кладите в ~/.config/figcraft-agent/skills или в .figcraft/skills проекта.</div>`;
+  html += msg ? `<div class="keys"><kbd>Space</kbd>отметить<kbd>↵</kbd>готово<button class="btn" data-library>Все навыки ›</button></div>`
+              : `<div class="keys"><kbd>↵</kbd>закрепить или снять<kbd>Esc</kbd>закрыть<button class="btn" data-library>Все навыки ›</button></div>`;
+  const cur = slash;
+  const m = openMenu(html, $("box"));  // closes the old menu, which forgets slash
+  slash = cur;
+  m.dataset.kind = "slash";
+  renderComposer();
+  m.querySelector("[data-library]").onclick = openLibrary;
+  m.onclick = (e) => e.stopPropagation();
+  m.querySelectorAll("[data-k]").forEach((b) => {
+    b.onmousedown = (e) => e.preventDefault();  // keep the caret in the text
+    b.onclick = () => { slash.i = +b.dataset.k; msg ? toggleSlash() : pinSlash(); };
+  });
+  m.querySelectorAll("[data-more]").forEach((b) => {
+    b.onmousedown = (e) => e.preventDefault();
+    b.onclick = () => { slash.open = new Set([...(slash.open || []), b.dataset.more]); slash.items = slashItems(slash.q, slash.open); renderSlash(); };
+  });
+  m.querySelector(".on")?.scrollIntoView({block: "nearest"});
+  const q = m.querySelector("#sq");
+  if (q) {
+    q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+    q.oninput = () => { slash.q = q.value; slash.items = slashItems(q.value, slash.open); slash.i = 0; renderSlash(); };
+    q.onkeydown = slashKeys;
+  }
+}
+function dropChip(c, keep) {  // a chip and the space after it, unless that text is `keep` (the caret is in it)
+  const n = c.nextSibling;
+  if (n?.nodeType === 3 && n !== keep && n.data.startsWith(" ")) { n.data = n.data.slice(1); if (!n.data) n.remove(); }
+  c.remove();
+}
+function toggleSlash() {  // the chosen skill in or out of the message; its chip goes just before the /query
+  const s = slash.items[slash.i];
+  const at = slashAt();
+  if (!s || !at) return;
+  slash.touched = true;
+  const mine = [...ed.querySelectorAll(".chip.skill")];
+  const had = mine.filter((c) => c.dataset.name === s.name);
+  if (had.length) had.forEach((c) => dropChip(c, at.node));
+  else {
+    if (EXCLUSIVE.has(s.group)) mine.filter((c) => c.dataset.group === s.group).forEach((c) => dropChip(c, at.node));
+    const tail = at.node.splitText(at.start);
+    const chip = chipEl(skillChip(s));
+    tail.before(chip, document.createTextNode(" "));
+    const r = document.createRange();
+    r.setStart(tail, at.end - at.start); r.collapse(true);
+    placeCaret(r);
+  }
+  changed();
+  updateSlash();
+}
+function pinSlash() {
+  const s = slash.items[slash.i];
+  if (!s) return;
+  if (slash.mode === "message") ed.querySelectorAll(".chip.skill").forEach((c) => c.dataset.name === s.name && dropChip(c, slashAt()?.node));
+  togglePin(s).then(() => slash && (slash.mode === "pin" ? renderSlash() : updateSlash())).catch((err) => toast(err.message));
+}
+function closeSlash(dropQuery) {
+  if (!slash) return;
+  if (dropQuery && slash.mode === "message") {
+    const at = slashAt();
+    if (at) { const r = document.createRange(); r.setStart(at.node, at.start); r.setEnd(at.node, at.end); r.deleteContents(); placeCaret(r); changed(); }
+  }
+  if (menu?.dataset.kind === "slash") closeMenu();
+  slash = null;
+}
+function slashKeys(e) {  // ↑ ↓ move; Space ticks; Tab pins in the chat; Enter done (ticks the current one if none was); Esc closes
+  const n = slash.items.length;
+  if ((e.key === "ArrowDown" || e.key === "ArrowUp") && n) {
+    slash.i = (slash.i + (e.key === "ArrowDown" ? 1 : n - 1)) % n;
+    return e.preventDefault(), renderSlash(), true;
+  }
+  if (e.key === "Escape") {
+    e.preventDefault(); e.stopPropagation();
+    if (slash.mode === "message") { const at = slashAt(); slashOff = at && {node: at.node, start: at.start}; }
+    closeSlash(false); ed.focus();
+    return true;
+  }
+  if (slash.mode === "pin") {
+    if (e.key === "Enter" && n) { e.preventDefault(); pinSlash(); }
+    return e.key === "Enter";
+  }
+  if (e.key === " " && n) return e.preventDefault(), toggleSlash(), true;
+  if (e.key === "Tab" && n) return e.preventDefault(), pinSlash(), true;
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (!slash.touched && n) toggleSlash();
+    closeSlash(true);
+    return true;
+  }
+  return false;
+}
+function openSlash(mode) {
+  if (mode === "pin") { slash = {mode: "pin", q: "", i: 0, open: new Set(), items: slashItems("")}; return renderSlash(); }
+  ed.focus(); if (caret) placeCaret(caret);
+  slashOff = null;
+  document.execCommand("insertText", false, ed.textContent && !/\s$/.test(ed.textContent) ? " /" : "/");
+  changed(); updateSlash();
+}
+
+function openPinned() {  // the chat's skills: always on, pinned, may the agent pick more
+  const always = (S.skills || []).filter((s) => s.mode === "always");
+  const pins = pinned().map((n) => skillOf(n) || {name: n, title: n, group: "other", summary: "нет такого скилла"});
+  const defaults = S.skillDefaults || [];
+  const same = defaults.length === pins.length && pins.every((s) => defaults.includes(s.name));
+  const row = (s, x) => `<div class="item g-${s.group}"><span class="gi">${(GROUPS[s.group] || GROUPS.other)[1]}</span>
+    <span class="grow">${esc(s.title)}<span class="note">${esc(x === "lock" ? s.summary : (GROUPS[s.group] || GROUPS.other)[0].toLowerCase())}</span></span>${swatches(s)}
+    ${x === "lock" ? `<span style="color:var(--faint)" title="Режим «всегда»">\u{f033e}</span>` : `<button class="btn ghost" data-unpin="${esc(s.name)}" title="Убрать из чата">󰅖</button>`}</div>`;
+  const m = openMenu(`<div class="head">Скиллы этого чата</div><div class="lead">Идут с каждым сообщением, пока не уберёшь</div>
+    ${always.length ? `<div class="head">Всегда</div>${always.map((s) => row(s, "lock")).join("")}` : ""}
+    <div class="head">Закреплены в чате · ${pins.length}</div>${pins.map((s) => row(s)).join("")}
+    <button class="item" data-a="add"><span style="color:var(--accent)">󰐕</span><span class="grow" style="color:var(--accent)">Добавить скилл</span></button>
+    <div class="sep"></div>
+    <button class="item" data-a="auto"><span class="grow" style="white-space:normal">Агент может взять ещё<br><small>Скиллы с режимом «сам» — по описанию, когда подходят к задаче. В ответе видно какие.</small></span><span class="toggle ${autoOn() ? "on" : ""}"></span></button>
+    <div class="sep"></div>
+    <div class="head">Картинки-референсы задач</div>
+    ${Object.entries(REFERENCE).map(([k, [t, d]]) => `<button class="item" data-ref="${k}"><span class="grow" style="white-space:normal">${t}<br><small>${d}</small></span><span style="color:var(--accent)">${refMode() === k ? "󰄬" : ""}</span></button>`).join("")}
+    <div class="sep"></div>
+    <div class="row" style="padding:2px 4px"><button class="btn line" data-a="library">Все скиллы</button><button class="btn line" data-a="defaults" ${same ? "disabled" : ""}>${same ? "󰄬 Так начинаются новые чаты файла" : "Для новых чатов файла"}</button></div>`,
+    $("box"));
+  m.dataset.kind = "pinned";
+  $("pinnedBtn").classList.add("open");
+  m.onclick = async (e) => {
+    e.stopPropagation();
+    const b = e.target.closest("[data-a], [data-unpin], [data-ref]");
+    if (!b) return;
+    try {
+      if (b.dataset.unpin) { await setPinned(pinned().filter((n) => n !== b.dataset.unpin)); openPinned(); }
+      else if (b.dataset.ref) { await setPinned(undefined, undefined, b.dataset.ref); openPinned(); }
+      else if (b.dataset.a === "library") openLibrary();
+      else if (b.dataset.a === "add") openSlash("pin");
+      else if (b.dataset.a === "auto") { await setPinned(undefined, !autoOn()); openPinned(); }
+      else if (b.dataset.a === "defaults") { S.skillDefaults = (await api("/api/skill-defaults", {skills: pinned()})).skillDefaults; openPinned(); }
+    } catch (err) { toast(err.message); }
+  };
+}
+
+// ---- the full skill library ----
+const SKILL_MODES = {always: "Всегда", manual: "Вручную", auto: "Сам"};
+const sizeLabel = (n) => n < 1024 ? `${n} Б` : `${Math.ceil(n / 1024)} КБ`;
+function openLibrary() {
+  if (slash?.mode === "message") closeSlash(true);
+  closeMenu(); library = {screen: "catalog", q: "", group: "all", detail: null}; render();
+  $("skillSearch")?.focus();
+}
+function libraryBack() {
+  if (library.screen !== "catalog") { skillRequest++; library.screen = "catalog"; library.detail = null; renderLibrary(); }
+  else { library = null; render(); if (!showSettings) ed.focus(); }
+}
+function librarySkills() {
+  const q = library.q.toLowerCase().trim();
+  const matching = (S.skills || []).filter((s) => (library.group === "all" || s.group === library.group)
+    && (!q || `${s.name} ${s.title} ${s.summary} ${s.description || ""} ${SOURCE[s.source] || s.source}`.toLowerCase().includes(q)));
+  return Object.keys(GROUPS).flatMap((group) => matching.filter((s) => s.group === group));
+}
+function stepSkill(delta) {
+  const list = librarySkills(), index = list.findIndex((s) => s.name === library.name);
+  if (index >= 0 && list[index + delta]) openSkill(list[index + delta].name);
+}
+async function openSkill(name) {
+  const seq = ++skillRequest;
+  library.screen = "card"; library.name = name; library.detail = null; library.error = null; renderLibrary();
+  try {
+    const detail = await api("/api/skill?name=" + encodeURIComponent(name));
+    if (library?.screen === "card" && library.name === name && seq === skillRequest) { library.detail = detail; renderLibrary(); }
+  } catch (err) { if (library && seq === skillRequest) { library.error = err.message; renderLibrary(); } }
+}
+async function changeSkillMode(name, mode) {
+  try {
+    const r = await api("/api/skill-mode", {name, mode}); S.skills = r.skills;
+    if (library) renderLibrary();
+  } catch (err) { toast(err.message); if (library) renderLibrary(); }
+}
+function skillModeSelect(s) {
+  return `<select class="${s.mode}" data-mode="${esc(s.name)}" aria-label="Режим ${esc(s.title)}" ${s.source === "pen.dev" ? "disabled" : ""}>${Object.entries(SKILL_MODES).map(([k, label]) => `<option value="${k}" ${s.mode === k ? "selected" : ""}>${label}</option>`).join("")}</select>`;
+}
+function skillPreview(s) {
+  const colors = (s.preview?.colors || []).filter((c) => /^#[0-9a-f]{6}$/i.test(c));
+  if (!colors.length) return "";
+  const [bg, , ink = "#EDE7DC", accent = ink] = colors;
+  return `<div class="skill-preview" style="background:${bg};color:${ink}"><div class="sample"><b>Aa</b><span>${esc(s.preview.font || "Палитра стиля")}</span><em style="background:${accent};color:${bg}">Войти</em></div><div class="skill-palette">${colors.map((c, i) => `<div><i style="background:${c}"></i><small>${["фон", "поверхность", "текст", "акцент"][i] || c}</small></div>`).join("")}</div></div>`;
+}
+function renderLibrary() {
+  const el = $("skillLibrary"), active = document.activeElement;
+  const searchFocus = active?.id === "skillSearch", selection = searchFocus ? [active.selectionStart, active.selectionEnd] : null;
+  library.scrolls ||= {};
+  if (el.dataset.screen) library.scrolls[el.dataset.screen] = el.querySelector(".body")?.scrollTop || 0;
+  const screenKey = library.screen + (library.screen === "card" ? library.name : "");
+  const scroll = library.scrolls[screenKey] || 0;
+  el.dataset.screen = screenKey;
+  const cat = S.skills || [], card = library.screen === "card";
+  const s = card && skillOf(library.name), d = library.detail;
+  const title = card ? s?.title || library.name : library.screen === "help" ? "Как устроены скиллы" : library.screen === "add" ? "Добавить скилл" : "Скиллы";
+  const meta = card ? `${(GROUPS[s?.group] || GROUPS.other)[0]} · ${SOURCE[s?.source] || s?.source || ""}` : `для всех файлов · ${cat.length}`;
+  let html = "", footer = "";
+  if (library.screen === "catalog") {
+    const filtered = librarySkills();
+    html = `<input class="library-search" id="skillSearch" placeholder="Найти скилл…" aria-label="Найти скилл" value="${esc(library.q)}"><div class="skill-filters">${[["all", ["Все"]], ...Object.entries(GROUPS)].filter(([k]) => k === "all" || cat.some((s) => s.group === k)).map(([k, g]) => `<button data-group="${k}" class="${library.group === k ? "on" : ""}" aria-pressed="${library.group === k}">${g[0]}<small>${k === "all" ? cat.length : cat.filter((s) => s.group === k).length}</small></button>`).join("")}</div>`;
+    for (const [key, g] of Object.entries(GROUPS)) {
+      const list = filtered.filter((s) => s.group === key); if (!list.length) continue;
+      html += `<section class="skill-group g-${key}"><h2><i>${g[1]}</i>${g[0]} · ${list.length} <small>${g[2] || ""}</small></h2><div class="list">${list.map((s) => `<div class="skill-entry"><button data-skill="${esc(s.name)}"><span class="gi">${g[1]}</span><span class="entry-info"><b>${esc(s.title)}</b>${swatches(s)}<small>${esc(s.summary)} · ${esc(SOURCE[s.source] || s.source)}</small></span></button>${skillModeSelect(s)}</div>`).join("")}</div></section>`;
+    }
+    if (!filtered.length) html += `<p>${cat.length ? "Ничего не найдено. Попробуй другое название или группу." : "Скиллов пока нет. Добавь папку со SKILL.md."}</p>`;
+    footer = `<small class="grow">󰉋 встроенные · мои · проект · pen.dev</small><button class="btn line" data-page="add">+ Добавить</button>`;
+  } else if (card) {
+    if (!s) html = `<p>Скилл больше не доступен в этом файле.</p>`;
+    else {
+      html = `${skillPreview(s)}<p>${esc(s.description || s.summary)}</p><section><h2>Как применять</h2>${Object.entries(SKILL_MODES).map(([mode, label]) => `<button class="radio ${s.mode === mode ? "on" : ""}" data-card-mode="${mode}" ${s.source === "pen.dev" ? "disabled" : ""}><span class="r"></span><span><b>${label === "Сам" ? "Агент берёт сам" : label === "Вручную" ? "Только вручную" : "Всегда"}</b><small>${({manual: "Через / или закрепить в чате.", auto: "Когда задача подходит под описание скилла.", always: "Идёт с каждым сообщением во всех чатах."})[mode]}${mode === "manual" && EXCLUSIVE.has(s.group) ? " В группе можно закрепить один скилл: новый заменит текущий." : ""}</small></span></button>`).join("")}${s.source === "pen.dev" ? "<small>Источник pen.dev — только чтение</small>" : ""}</section>`;
+      if (library.error) html += `<p class="error">${esc(library.error)}</p><button class="btn line" data-retry>Повторить загрузку</button>`;
+      else if (!d) html += `<p role="status">Загрузка файлов скилла…</p>`;
+      else html += `<section><h2>Внутри · ${d.files.length}${d.truncated ? "+" : ""} файлов · ${sizeLabel(d.files.reduce((n, f) => n + f.size, 0))}</h2><div class="skill-files">${d.files.map((f) => `<div class="skill-file">󰈔<span>${esc(f.name)}</span><small>${sizeLabel(f.size)}</small></div>`).join("")}</div><details><summary>Инструкция SKILL.md</summary><pre>${esc(d.body)}</pre></details></section>`;
+      html += `<section><h2>Агенты</h2><div class="skill-files">${[...new Map(S.agents.map((a) => [familyOf(a.id), a])).values()].map((a) => `<div class="skill-file">${markOf(a.id)}<span>${esc(a.name)}</span><small>получает выбранный скилл в ходе</small></div>`).join("")}</div></section>${d ? `<small title="${esc(d.dir)}">${esc(d.dir)}</small>` : ""}`;
+      footer = `<button class="btn primary grow" data-pin ${s.mode === "always" ? "disabled" : ""}>${s.mode === "always" ? "Включён всегда" : pinned().includes(s.name) ? "Убрать из этого чата" : "Закрепить в этом чате"}</button><button class="btn line" data-folder>Папка</button>`;
+    }
+  } else if (library.screen === "help") {
+    html = `<section><h2>Четыре уровня</h2><p>Всегда — скилл включён в библиотеке и идёт с каждым сообщением. В чате — закреплён над полем ввода. В сообщении — чип через / на один ход; Tab в меню закрепляет в чате. Сам — агент берёт скилл по описанию, если включён режим «Сам» и разрешён выбор дополнительных скиллов. В ответе видно, какие скиллы использованы и почему.</p></section><section><h2>Группы</h2><p>Основа, Стиль, Дизайн-система, Платформа, Качество, Задачи и Другие. Стиль и дизайн-система — по одному в чате: второй заменяет первый. Скилл в сообщении заменяет скилл той же группы из чата на один ход.</p></section><section><h2>Новые скиллы</h2><p>Скилл — папка с SKILL.md. Группу, превью и режим по умолчанию задаёт metadata. Без неё скилл попадёт в «Другие» и будет доступен в режиме «Сам»; pen.dev — «Вручную». Новые папки появляются без перезапуска.</p></section><section><h2>Источники</h2><p>Встроенные — figcraft-review/skills/skills. Мои — ~/.config/figcraft-agent/skills. Проект — .figcraft/skills в корне репозитория. pen.dev — ~/.pencil/skills, только чтение. При одинаковом имени: проект → мои → встроенные → pen.dev.</p></section><section><h2>Агентам</h2><p>Выбранные скиллы передаются агентам одинаково: текст SKILL.md один раз на сессию, затем напоминание. Для режима «Сам» агент получает описания и пути к файлам.</p></section><pre>${esc('---\nname: style-graphite\ndescription: Тихий рабочий инструмент\nmetadata:\n  group: style\n  title: Graphite\n  summary: Серые поверхности, один акцент\n  preview: "#1C1D21 #2A2B31 #E4E6EE #8AA4FF · Inter"\n  mode: manual\n---')}</pre>`;
+  } else if (library.screen === "add") {
+    html = `<p>Укажи папку со SKILL.md на этом компьютере. Она будет скопирована в мои скиллы; существующие папки сохранятся.</p><form id="skillImport"><label for="skillFolder">Путь к папке</label><input id="skillFolder" placeholder="~/Projects/my-skill" required><button class="btn primary" style="margin-top:10px">Добавить</button><p class="error" id="importError" role="alert"></p></form><section><h2>Можно добавить самостоятельно</h2><p>Положи папку в ~/.config/figcraft-agent/skills или .figcraft/skills проекта. Она появится в библиотеке автоматически.</p></section>`;
+  }
+  el.innerHTML = `<header class="top"><button class="iconbtn" id="libraryBack" aria-label="Назад">󰁍</button><div class="titles"><b>${esc(title)}</b><small>${esc(meta)}</small></div>${library.screen !== "help" ? '<button class="btn line" data-page="help" aria-label="Как устроены скиллы">?</button>' : ''}</header><div class="body">${html}</div>${footer ? `<footer class="footer">${footer}</footer>` : ""}`;
+  $("libraryBack").onclick = libraryBack;
+  el.querySelectorAll("[data-page]").forEach((b) => b.onclick = () => { library.screen = b.dataset.page; renderLibrary(); });
+  el.querySelectorAll("[data-group]").forEach((b) => b.onclick = () => { library.group = b.dataset.group; renderLibrary(); });
+  el.querySelectorAll("[data-skill]").forEach((b) => b.onclick = () => openSkill(b.dataset.skill));
+  el.querySelectorAll("[data-mode]").forEach((b) => b.onchange = () => changeSkillMode(b.dataset.mode, b.value));
+  el.querySelectorAll("[data-card-mode]").forEach((b) => b.onclick = () => changeSkillMode(s.name, b.dataset.cardMode));
+  if ($("skillSearch")) $("skillSearch").oninput = (e) => { library.q = e.target.value; renderLibrary(); };
+  el.querySelector("[data-retry]")?.addEventListener("click", () => openSkill(library.name));
+  el.querySelector("[data-pin]")?.addEventListener("click", async () => { try { await togglePin(s); renderLibrary(); } catch (err) { toast(err.message); } });
+  el.querySelector("[data-folder]")?.addEventListener("click", () => api("/api/skill-folder", {name: s.name}).catch((err) => toast(err.message)));
+  if ($("skillImport")) $("skillImport").onsubmit = async (e) => {
+    e.preventDefault(); const form = e.currentTarget, button = form.querySelector("button"); button.disabled = true;
+    try { const r = await api("/api/skill-import", {folder: $("skillFolder").value}); S.skills = r.skills; library.group = "all"; library.q = ""; openSkill(r.name); }
+    catch (err) { if (form.isConnected) { $("importError").textContent = err.message; button.disabled = false; } }
+  };
+  el.querySelector(".body").scrollTop = scroll;
+  if (searchFocus && $("skillSearch")) { $("skillSearch").focus(); $("skillSearch").setSelectionRange(...selection); }
+}
+
+// ---- pasted or dropped images ----
+
+const imageUrl = (p) => "/api/image?path=" + encodeURIComponent(p);
+const pictureHtml = (s, i) => `<button class="picture" data-picture="${esc(JSON.stringify(s))}" data-index="${i}" aria-label="Открыть ${esc(s.label || `картинку ${i + 1}`)}"><img src="${imageUrl(s.path)}" alt="${esc(s.title || s.label)}"><span class="pic-number">${esc(s.label?.match(/\d+$/)?.[0] || i + 1)}</span><span class="pic-zoom" aria-hidden="true">⌕</span></button>`;
+const bytes = (n) => n == null ? "" : n < 1024 ? `${n} Б` : n < 1 << 20 ? `${Math.round(n / 1024)} КБ` : `${(n / (1 << 20)).toFixed(1)} МБ`;
+const fileMeta = (s) => [String(s.label || "").split(".").pop().toUpperCase(), bytes(s.size)].filter(Boolean).join(" · ");
+let failed = [];  // uploads that broke: {file, error}; Повторить sends the file again
+const SHOWN = 4;  // pictures in the tray before the rest fold into «+N»
+function renderAttachments() {
+  const segs = segments(), pics = segs.filter((s) => s.kind === "image" && s.path), files = segs.filter((s) => s.kind === "file");
+  const tray = $("attachments");
+  const fold = pics.length > SHOWN + 1 ? pics.length - SHOWN : 0;
+  tray.innerHTML = pics.slice(0, fold ? SHOWN : pics.length).map((s, i) => `<div class="attachment">${pictureHtml(s, i)}<button class="remove-image" data-remove="${i}" aria-label="Убрать ${esc(s.label)}">×</button></div>`).join("")
+    + (fold ? `<button class="more-tile" data-picture-more title="Все картинки"><b>+${fold}</b><small>${plural(fold, ["картинка", "картинки", "картинок"]).replace(/^\d+ /, "")}</small></button>` : "")
+    + files.map((s, i) => `<div class="attachment">${fileHtml(s)}<button class="remove-image" data-remove-file="${i}" aria-label="Убрать ${esc(s.label)}">×</button></div>`).join("")
+    + [...uploads].map(() => `<div class="attachment uploading" role="status" aria-label="Загрузка"><span></span></div>`).join("")
+    + failed.map((f, i) => `<div class="failed"><div class="uploading">!</div><div><b>${esc(f.file.name || "Файл")} не загрузился</b><small>${esc(f.error)}. <button data-retry="${i}">Повторить</button> · <button data-drop="${i}">Убрать</button></small></div></div>`).join("");
+  tray.onclick = (e) => {
+    const t = e.target.closest("[data-remove], [data-remove-file], [data-retry], [data-drop], [data-picture-more], [data-picture]");
+    if (!t) return;
+    if (t.dataset.remove != null) ed.querySelectorAll('[data-kind="image"]')[+t.dataset.remove]?.remove();
+    else if (t.dataset.removeFile != null) ed.querySelectorAll('[data-kind="file"]')[+t.dataset.removeFile]?.remove();
+    else if (t.dataset.retry != null) { const [f] = failed.splice(+t.dataset.retry, 1); addFile(f.file); return; }
+    else if (t.dataset.drop != null) failed.splice(+t.dataset.drop, 1);
+    else return openViewer(pics, t.dataset.pictureMore != null ? SHOWN : +t.dataset.index);
+    changed();
+  };
+}
+async function addFile(file) {  // any file of any size: pictures show as thumbnails, the rest as tiles
+  const epoch = draftEpoch, image = file.type.startsWith("image/");
+  const task = {}; uploads.add(task); renderComposer();
+  try {
+    const data = await new Promise((ok, fail) => { const f = new FileReader(); f.onload = () => ok(f.result); f.onerror = () => fail(new Error("Не удалось прочитать файл")); f.readAsDataURL(file); });
+    const up = await api("/api/upload", {data, type: file.type, name: file.name || ""});
+    if (epoch !== draftEpoch) return;
+    if (image) {
+      const used = [...(chat?.messages || []).flatMap((m) => m.segments || []), ...segments()].filter((s) => s.kind === "image");
+      const n = Math.max(0, ...used.map((s, i) => +(s.label?.match(/\d+$/)?.[0] || i + 1))) + 1;
+      insertChips([{kind: "image", path: up.path, label: `Картинка ${n}`, icon: "󰋩", title: file.name || "Вставленная картинка"}]);
+    } else insertChips([{kind: "file", path: up.path, label: file.name || "файл", size: up.size ?? file.size, icon: "󰈔", title: file.name}]);
+  } catch (err) {
+    if (epoch === draftEpoch) { failed.push({file, error: err.message || "Связь оборвалась"}); toast(err.message); }
+  } finally { uploads.delete(task); renderComposer(); }
+}
+function addFiles(dt) {
+  const files = [...(dt?.files || [])];
+  if (!files.length) return false;
+  const epoch = draftEpoch;
+  files.reduce((p, f) => p.then(() => epoch === draftEpoch && addFile(f)), Promise.resolve());
+  return true;
+}
+let gallery = [], galleryIndex = 0, zoom = 1, fitting = true;
+function openViewer(pics, index) {
+  closeMenu(); gallery = pics; galleryIndex = index;
+  if (!$("viewer").open) $("viewer").showModal();
+  showPicture();
+}
+function showPicture() {
+  const s = gallery[galleryIndex]; if (!s) return;
+  fitting = true; zoom = 1;
+  $("viewerTitle").textContent = s.label || `Картинка ${galleryIndex + 1}`;
+  $("viewerMeta").textContent = `${galleryIndex + 1} из ${gallery.length}`;
+  const img = $("viewerImage"); img.hidden = true; $("viewerError").hidden = true;
+  img.onload = () => { img.hidden = false; $("viewerMeta").textContent = `${img.naturalWidth}×${img.naturalHeight} · ${galleryIndex + 1} из ${gallery.length}`; fitPicture(); };
+  img.onerror = () => { img.hidden = true; $("viewerError").hidden = false; };
+  img.alt = s.title || s.label; img.src = imageUrl(s.path);
+  $("viewerDownload").href = imageUrl(s.path); $("viewerDownload").download = s.path.split("/").pop();
+  $("viewerPrev").disabled = galleryIndex === 0; $("viewerNext").disabled = galleryIndex === gallery.length - 1;
+  $("viewerStrip").innerHTML = gallery.map((p, i) => `<button class="picture ${i === galleryIndex ? "current" : ""}" data-gallery="${i}" aria-label="${esc(p.label)}" aria-pressed="${i === galleryIndex}"><img src="${imageUrl(p.path)}" alt="${esc(p.label)}"></button>`).join("");
+  $("viewerStrip").querySelector(".current")?.scrollIntoView({block: "nearest", inline: "nearest"});
+  $("viewerZoom").textContent = "…";
+}
+function setZoom(z) {
+  const img = $("viewerImage");
+  zoom = Math.max(.05, Math.min(8, z));
+  img.style.width = img.naturalWidth * zoom + "px"; img.style.height = img.naturalHeight * zoom + "px";
+  $("viewerZoom").textContent = Math.round(zoom * 100) + "%";
+}
+function fitPicture() {
+  const img = $("viewerImage"), canvas = $("viewerCanvas");
+  if (!img.naturalWidth) return;
+  fitting = true; setZoom(Math.min(1, canvas.clientWidth / img.naturalWidth, canvas.clientHeight / img.naturalHeight));
+}
+function stepPicture(delta) { const i = galleryIndex + delta; if (i >= 0 && i < gallery.length) { galleryIndex = i; showPicture(); } }
+$("viewerClose").onclick = () => $("viewer").close();
+$("viewerPrev").onclick = () => stepPicture(-1); $("viewerNext").onclick = () => stepPicture(1);
+$("viewerStrip").onclick = (e) => { const b = e.target.closest("[data-gallery]"); if (b) { galleryIndex = +b.dataset.gallery; showPicture(); } };
+$("zoomOut").onclick = () => { fitting = false; setZoom(zoom / 1.25); };
+$("zoomIn").onclick = () => { fitting = false; setZoom(zoom * 1.25); };
+$("zoomFit").onclick = fitPicture;
+$("viewerCanvas").onwheel = (e) => { e.preventDefault(); fitting = false; setZoom(zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1)); };
+$("viewer").onkeydown = (e) => {
+  e.stopPropagation();
+  if (e.key === "ArrowLeft") { e.preventDefault(); stepPicture(-1); }
+  if (e.key === "ArrowRight") { e.preventDefault(); stepPicture(1); }
+};
+window.addEventListener("resize", () => { if ($("viewer").open && fitting) fitPicture(); });
+
+const INSTALL = {claude:"https://docs.anthropic.com/en/docs/claude-code", codex: "https://github.com/openai/codex",
+                 pi: "https://github.com/badlogic/pi-mono"};
+const MODELS = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "модель" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "модели" : "моделей"}`;
+const CHATS = (n) => `${n} ${n % 10 === 1 && n % 100 !== 11 ? "чат" : [2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100) ? "чата" : "чатов"}`;
+function shortPath(p) {
+  const s = String(p || "").replace(/^\/home\/[^/]+/, "~").split("/");
+  return s.length > 5 ? [...s.slice(0, 4), "…", s[s.length - 1]].join("/") : s.join("/");
+}
+
+const SHOT_DAYS = [[1, "сутки"], [7, "неделю"], [30, "30 дней"], [0, "всегда"]];
+let shotsInfo = null;  // the agent's screenshots on disk, fetched when the settings open
+const shotsText = (i) => i.count ? `${plural(i.count, ["снимок", "снимка", "снимков"])} · ${(i.bytes / 1048576).toFixed(1)} МБ` : "нет снимков";
+function renderSettings() {
+  const modes = {figcraft: ["Только FigCraft", "Меняет макет и читает файлы проекта. Команды и правки файлов — нет."],
+                 terminal: ["Как в терминале", "Разрешения из настроек самого агента. Нужно для скриптов проекта."]};
+  const here = S.chats.length;
+  $("settings").innerHTML = `
+    <div class="top"><button class="iconbtn" id="back" title="Назад">󰁍</button>
+      <span class="t" style="display:flex;flex-direction:column;justify-content:center"><b style="font-size:13px">Настройки</b><small>для всех файлов</small></span></div>
+    <div class="body">
+      <div class="group"><div class="gt">Агенты</div><div class="list">
+        ${S.agents.map((a) => `<div class="agentrow">${markOf(a.id)}<div class="info">
+            <span><b style="${a.ok ? "" : "color:var(--dim)"}">${esc(a.name)}</b> <small>${esc((a.version.match(/[\d.]+/) || [""])[0])}</small></span>
+            <small title="${esc(a.account || a.path || "")}">${esc(a.account ? `аккаунт ${shortPath(a.account)}` : a.ok ? shortPath(a.path) : "не найден в PATH")}</small></div>
+          ${a.ok ? `<span class="count">${MODELS(a.models.length)}</span>` : `<a class="btn line" href="${INSTALL[familyOf(a.id)]}" target="_blank">Как установить</a>`}</div>`).join("")}
+      </div></div>
+      <div class="group"><div class="gt">Доступ агента</div>
+        ${S.modes.map((k) => `<button class="radio ${S.settings.mode === k ? "on" : ""}" data-m="${k}"><span class="r"></span>
+          <span><b>${modes[k][0]}</b><small>${modes[k][1]}</small></span></button>`).join("")}</div>
+      <div class="group"><div class="gt">Скиллы</div><button class="store" id="libraryBtn"><span class="grow" style="flex:1;text-align:left">󰭤 Все скиллы<small style="display:block">Библиотека · ${(S.skills || []).length} · группы и режимы</small></span><span>›</span></button></div>
+      <div class="group"><div class="gt">Чаты</div>
+        <div class="store"><div style="flex:1;min-width:0"><div>${S.doc.name ? `У этого файла ${CHATS(here)}` : "Файл не открыт"}</div>
+          <small>~/.local/state/figcraft-agent</small></div>
+          <button class="btn line danger" id="clear" ${here ? "" : "disabled"}>Очистить</button></div>
+        <div class="store"><div style="flex:1;min-width:0"><div>Снимки агента</div>
+          <small id="shotsInfo">${shotsInfo ? shotsText(shotsInfo) : "считаю…"}</small></div>
+          <select id="shotDays" class="keep" aria-label="Сколько хранить снимки">${SHOT_DAYS.map(([d, label]) =>
+            `<option value="${d}" ${(S.settings.shotDays ?? 30) === d ? "selected" : ""}>${label}</option>`).join("")}</select>
+          <button class="btn line danger" id="clearShots" ${shotsInfo?.count ? "" : "disabled"}>Очистить</button></div></div>
+    </div>
+    <div class="foot">Агенты работают через свои CLI и ваши подписки — ключи не нужны. Чат продолжает сессию агента (claude --resume, codex exec resume, pi --session).</div>`;
+  $("libraryBtn").onclick = openLibrary;
+  $("back").onclick = () => { showSettings = false; shotsInfo = null; render(); };
+  $("settings").querySelectorAll(".radio").forEach((b) => b.onclick = async () => {
+    S.settings = {...S.settings, ...(await api("/api/settings", {mode: b.dataset.m}))}; render();
+  });
+  if (!shotsInfo) api("/api/shots").then((r) => { shotsInfo = r; if (showSettings) renderSettings(); }).catch(() => {});
+  $("shotDays").onchange = async (e) => {
+    try { S.settings = {...S.settings, ...(await api("/api/settings", {shotDays: +e.target.value}))}; shotsInfo = await api("/api/shots"); renderSettings(); }
+    catch (err) { toast(err.message); }
+  };
+  $("clearShots").onclick = async () => {
+    if (!confirm(`Удалить ${shotsText(shotsInfo)}? В чатах пропадут их превью.`)) return;
+    try { shotsInfo = await api("/api/shots/clear", {}); renderSettings(); } catch (err) { toast(err.message); }
+  };
+  $("clear").onclick = async () => {
+    if (!confirm(`Удалить ${CHATS(here)} файла «${S.doc.name}»?`)) return;
+    for (const c of [...S.chats]) await api("/api/delete", {chat: c.id});
+    chat = null; render();
+  };
+}
+
+function closeMenu() {
+  menu?.remove(); menu = null; slash = null;
+  for (const b of ["chatsBtn", "pickerBtn", "pinnedBtn"]) $(b).classList.remove("open");
+  if (!showSettings && !library && view === "chat") renderComposer();
+}
+function openMenu(html, anchor, below) {
+  closeMenu();
+  menu = document.createElement("div");
+  menu.className = "menu";
+  menu.innerHTML = html;
+  document.body.append(menu);
+  const r = anchor.getBoundingClientRect();
+  menu.style.left = "8px"; menu.style.right = "8px";
+  if (below) menu.style.top = r.bottom + 6 + "px"; else menu.style.bottom = innerHeight - r.top + 6 + "px";
+  menu.anchor = below ? null : anchor;
+  return menu;
+}
+
+$("chatsBtn").onclick = (e) => {  // the file's remarks and chats
+  e.stopPropagation();
+  if (menu?.dataset.kind === "chats") return closeMenu();
+  const open = R.list.filter((r) => r.status === "open").length, w = waiting().length;
+  const busy = new Set(S.running.map((r) => r.chat)), here = (c) => view === "chat" && chat?.id === c.id;
+  const m = openMenu(`<button class="item ${view === "remarks" ? "on" : ""}" data-remarks><span class="lead"><i class="sqm"></i></span><span class="grow">Замечания<br><small>${open} открыто · ${w} ждёт ответа</small></span><span class="lead">›</span></button>
+    <div class="sep"></div><div class="head">Чаты файла<span class="note" style="margin-left:auto">${S.chats.length}</span></div>`
+    + (S.chats.length ? S.chats.map((c) => `<div class="item ${here(c) ? "on" : ""}" data-id="${c.id}"><span class="lead">${markOf(c.agent)}</span><span class="grow">${esc(c.title)}<br><small>${busy.has(c.id) ? "работает · " : ""}${ago(c.updated)}${c.model ? " · " + esc(modelName(agentOf(c.agent), c.model)) : ""}</small></span>${busy.has(c.id) ? `<span class="spin"></span>` : here(c) ? `<span>✓</span>` : ""}<button class="btn x" data-del="${c.id}">Удалить</button></div>`).join("")
+      : `<div class="lead">Чатов у этого файла пока нет</div>`)
+    + `<div class="keys"><kbd>↑↓</kbd>выбрать<kbd>↵</kbd>открыть<button class="btn primary" data-new>+ Новый чат</button></div>`, $("chatsBtn"), true);
+  m.dataset.kind = "chats";
+  $("chatsBtn").classList.add("open");
+  m.onclick = async (ev) => {
+    ev.stopPropagation();
+    const del = ev.target.closest("[data-del]");
+    if (del) { await api("/api/delete", {chat: del.dataset.del}); if (chat?.id === del.dataset.del) chat = null; closeMenu(); return render(); }
+    if (ev.target.closest("[data-new]")) return newChat();
+    if (ev.target.closest("[data-remarks]")) { closeMenu(); view = "remarks"; render(); return loadRemarks(); }
+    const it = ev.target.closest("[data-id]");
+    if (it) { chat = await api("/api/chat?id=" + it.dataset.id); view = "chat"; closeMenu(); render(); ed.focus(); }
+  };
+};
+function newChat() {
+  chat = null; view = "chat"; start = {pick: 0, off: false}; draftSkills = null; draftAuto = true; draftRef = "checklist"; draftEpoch++; uploads.clear(); failed = [];
+  ed.innerHTML = ""; caret = null; closeMenu(); changed(); render(); ed.focus();
+}
+$("newBtn").onclick = newChat;
+$("gearBtn").onclick = () => { showSettings = !showSettings; closeMenu(); render(); };
+$("attachBtn").onclick = $("attachBtn2").onclick = (e) => {
+  e.stopPropagation();
+  if (menu?.dataset.kind === "plus") return closeMenu();
+  const m = openMenu(`<div class="head">Вставить в текст</div>
+    <button class="item" data-a="sel">󰆿 <span class="grow">Выделенные слои (${S.selection.filter((n) => !n.more).length})</span></button>
+    <button class="item" data-a="rem">󰀦 <span class="grow">Открытые замечания (review.py)</span></button>
+    <button class="item" data-a="at">@ <span class="grow">Слой или замечание по имени…</span></button>
+    <button class="item" data-a="pic">󰈔 <span class="grow">Файлы и картинки <small>— или вставь, перетащи</small></span></button>
+    <div class="head">Скиллы</div>
+    <button class="item" data-a="library">󰭤 <span class="grow">Все скиллы <small>— библиотека и режимы</small></span></button>
+    <button class="item" data-a="skill">\u{f0b64} <span class="grow">Скилл к сообщению <small>— или / в тексте</small></span></button>
+    <button class="item" data-a="pins">\u{f0403} <span class="grow">Скиллы чата <small>— ${plural(pinned().length, ["закреплён", "закреплено", "закреплено"])}</small></span></button>
+    <div class="head">Задачи</div>
+    <button class="item" data-a="vars">󰕰 <span class="grow">Варианты <small>— 2–3 направления, сценарии те же</small></span></button>
+    <button class="item" data-a="design">󰈙 <span class="grow">${S.designMd?.exists ? "Обновить DESIGN.md" : "Составить DESIGN.md"} <small>— о продукте для агента</small></span></button>
+    <div class="head">К каждому сообщению</div>
+    <button class="item" data-a="shots">󰄬 <span class="grow">PNG слоёв из чипов <small>— агент увидит их, а не только дерево</small></span>${S.settings.shots ? "вкл" : "выкл"}</button>`, $("box"));
+  m.dataset.kind = "plus";
+  m.querySelectorAll(".item").forEach((b) => b.onclick = async (ev) => {
+    const a = b.dataset.a;
+    closeMenu();
+    if (a === "sel") insertChips(suggested().map(layerChip));
+    else if (a === "rem") insertChips(segments().some((s) => s.kind === "remarks") ? [] : [REMARKS]);
+    else if (a === "library") openLibrary();
+    else if (a === "skill") setTimeout(() => openSlash("message"));  // after this click has closed the menus
+    else if (a === "pins") setTimeout(openPinned);
+    else if (a === "at") { ed.focus(); if (caret) placeCaret(caret); document.execCommand("insertText", false, " @"); changed(); updateMention(); }
+    else if (a === "pic") {
+      const f = Object.assign(document.createElement("input"), {type: "file", multiple: true});
+      f.onchange = () => addFiles(f);
+      f.click();
+    } else if (a === "vars") {
+      ed.focus(); if (caret) placeCaret(caret);
+      document.execCommand("insertText", false, "Сделай 2–3 варианта по variations.md: другой визуальный язык, те же сценарии и состояния. Что поменять: ");
+      changed();
+    } else if (a === "design") {
+      draftEpoch++; uploads.clear(); failed = []; ed.innerHTML = ""; caret = null; changed();
+      document.execCommand("insertText", false, S.designMd?.exists
+        ? "Обнови DESIGN.md по product-context.md: что изменилось в продукте и макете. "
+        : "Составь DESIGN.md для этого проекта по product-context.md: посмотри макет и файлы проекта, неизвестное отметь TODO с вопросом.");
+      changed(); ed.focus();
+    } else if (a === "shots") S.settings = {...S.settings, ...(await api("/api/settings", {shots: !S.settings.shots}))};
+  });
+};
+const modelDescription = (m) => m.description || ({fable: "Самая сильная, отвечает дольше", opus: "Для экранов и дизайн-системы", sonnet: "Быстрее, для правок по замечаниям", haiku: "Тексты и мелкие правки"}[m.id.split("-")[1]] || "");
+$("pickerBtn").onclick = (e) => {
+  e.stopPropagation();
+  if (menu) return closeMenu();
+  const agents = S.agents.filter((a) => a.ok);
+  let active = agents.find((a) => a.id === S.settings.agent)?.id || agents[0]?.id;
+  const m = openMenu(`<div class="search"><span aria-hidden="true">⌕</span><input id="q" aria-label="Найти модель" placeholder="Найти модель…"></div><div class="agent-tabs" role="tablist" aria-label="Агенты"></div><div class="model-status"></div><div class="model-list" role="tabpanel" aria-label="Модели"></div>
+    <div class="model-footer"><button class="item" id="toSettings">󰒓 <span class="grow">Агенты и доступ…</span></button></div>`, $("pickerBtn"));
+  m.classList.add("model-picker"); m.dataset.kind = "models";
+  m.addEventListener("click", (e) => e.stopPropagation());
+  $("pickerBtn").classList.add("open");
+  const draw = () => {
+    const a = agents.find((a) => a.id === active), q = m.querySelector("input").value.trim().toLowerCase();
+    m.querySelector(".agent-tabs").innerHTML = agents.map((a) => `<button role="tab" aria-selected="${a.id === active}" data-agent="${esc(a.id)}">${markOf(a.id)}${esc(a.name)}</button>`).join("");
+    m.querySelectorAll("[data-agent]").forEach((b) => b.onclick = () => { active = b.dataset.agent; draw(); });
+    m.querySelector(".model-status").innerHTML = `<span>Модели</span>${a ? '<span class="dot"></span><span>доступен</span>' : ''}`;
+    const models = (a?.models || []).filter((x) => !q || `${x.name} ${x.id} ${modelDescription(x)}`.toLowerCase().includes(q));
+    m.querySelector(".model-list").innerHTML = models.map((x) => {
+      const selected = S.settings.agent === active && S.settings.model === x.id;
+      return `<button class="item model-row ${selected ? "on" : ""}" data-model="${esc(x.id)}" aria-pressed="${selected}"><span class="grow">${esc(x.name)}${modelDescription(x) ? `<small>${esc(modelDescription(x))}</small>` : ''}</span>${selected ? '<span class="check">✓</span>' : ''}</button>`;
+    }).join("") || `<div class="item"><small>${a ? "Модели не найдены" : "Нет доступных агентов"}</small></div>`;
+    m.querySelectorAll("[data-model]").forEach((b) => b.onclick = () => {
+      S.settings.agent = active; S.settings.model = b.dataset.model; closeMenu(); renderComposer(); $("pickerBtn").focus();
+    });
+  };
+  draw();
+  m.querySelector("input").oninput = draw;
+  m.onkeydown = (e) => {
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeMenu(); $("pickerBtn").focus(); return; }
+    const rows = [...m.querySelectorAll("[data-model]")];
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); const i = rows.indexOf(document.activeElement);
+      rows[(i + (e.key === "ArrowDown" ? 1 : rows.length - 1)) % rows.length]?.focus();
+    } else if (e.key === "Enter" && (document.activeElement === m.querySelector("input") || rows.includes(document.activeElement))) { e.preventDefault(); (rows.includes(document.activeElement) ? document.activeElement : rows[0])?.click(); }
+  };
+  m.querySelector("input").focus();
+  m.querySelector("#toSettings").onclick = () => { closeMenu(); showSettings = true; render(); };
+};
+document.addEventListener("click", (e) => { if (menu && !menu.contains(e.target)) closeMenu(); });
+
+const sendBody = (segs) => ({chat: chat?.id, segments: segs, agent: S.settings.agent, model: S.settings.model,
+                             ...(chat ? {} : {skills: pinned(), autoSkills: draftAuto, reference: draftRef})});
+async function send() {  // while the agent works, a message waits in the chat's queue
+  if (uploads.size) return toast("Дождись загрузки файлов");
+  const segs = segments();
+  if (!segs.length) return;
+  if (running()) { (queued[chat.id] ||= []).push(segs); clearDraft(); return renderMessages(); }
+  try {
+    chat = await api("/api/send", sendBody(segs));
+    draftSkills = null; draftAuto = true; draftRef = "checklist";
+    clearDraft(); render();
+  } catch (err) { toast(err.message); }
+}
+function clearDraft() { draftEpoch++; uploads.clear(); failed = []; ed.innerHTML = ""; caret = null; changed(); }
+let flushing = false;
+async function flushQueue() {  // the next queued message once no agent works in this file
+  if (flushing || S.running.some((r) => r.file === S.doc.path || r.chat === chat?.id)) return;
+  const id = Object.keys(queued).find((k) => queued[k].length && S.chats.some((c) => c.id === k));
+  if (!id) return;
+  flushing = true;
+  const segs = queued[id].shift();
+  try {
+    const c = await api("/api/send", {chat: id, segments: segs, agent: S.settings.agent, model: S.settings.model});
+    if (chat?.id === id) chat = c;
+  } catch (err) { queued[id].unshift(segs); toast(err.message); }
+  finally { flushing = false; if (view === "chat" && !showSettings && !library) renderMessages(); }
+}
+$("sendBtn").onclick = () => running() ? api("/api/stop", {chat: chat.id}) : send();
+ed.oninput = () => { changed(); updateMention(); updateSlash(); };
+ed.onkeydown = (e) => {
+  if (e.isComposing) return;
+  if (slash?.mode === "message" && menu?.dataset.kind === "slash" && slashKeys(e)) return;
+  if (mention && menu?.dataset.kind === "mention") {
+    const n = mention.items.length;
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && n) {
+      e.preventDefault();
+      mention.i = (mention.i + (e.key === "ArrowDown" ? 1 : n - 1)) % n;
+      return renderMention();
+    }
+    if ((e.key === "Enter" || e.key === "Tab") && n) { e.preventDefault(); return chooseMention(mention.i); }
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); return closeMention(); }
+  }
+  if (startShown() && !filled() && !e.shiftKey) {  // the start card: 1–3 or ↑↓ pick, Enter starts, Esc hides it
+    const k = /^[1-3]$/.test(e.key) ? +e.key - 1 : e.key === "ArrowDown" ? (start.pick + 1) % 3 : e.key === "ArrowUp" ? (start.pick + 2) % 3 : null;
+    if (k != null) { e.preventDefault(); start.pick = k; return renderMessages(); }
+    if (e.key === "Enter") { e.preventDefault(); return startPicked(); }
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); start.off = true; return renderMessages(); }
+  }
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+  else if (e.key === "Enter") { e.preventDefault(); document.execCommand("insertLineBreak"); changed(); }
+  else if (e.key === "Tab" && suggested().length) { e.preventDefault(); insertChips(suggested().map(layerChip)); }
+};
+ed.onpaste = (e) => {
+  e.preventDefault();
+  if (!addFiles(e.clipboardData)) document.execCommand("insertText", false, e.clipboardData.getData("text/plain"));
+};
+let dragDepth = 0;  // files over the input: it says how many will be attached
+const dragFiles = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+$("composer").ondragenter = (e) => {
+  if (!dragFiles(e)) return;
+  e.preventDefault();
+  if (dragDepth++) return;
+  const n = [...e.dataTransfer.items].filter((i) => i.kind === "file").length;
+  const d = document.createElement("div");
+  d.className = "drop"; d.id = "drop";
+  d.innerHTML = `<span>Отпустите, чтобы прикрепить ${n ? plural(n, ["файл", "файла", "файлов"]) : "файлы"}</span><small>Картинки и любые файлы — без ограничений</small>`;
+  $("box").append(d);
+};
+$("composer").ondragleave = () => { if (dragDepth && !--dragDepth) $("drop")?.remove(); };
+$("composer").ondragover = (e) => e.preventDefault();
+$("composer").ondrop = (e) => {
+  e.preventDefault();
+  dragDepth = 0; $("drop")?.remove();
+  addFiles(e.dataTransfer);
+};
+document.addEventListener("keydown", (e) => {
+  if (library) {
+    if (e.key === "Escape") { e.preventDefault(); libraryBack(); }
+    else if (library.screen === "card" && ["ArrowLeft", "ArrowRight"].includes(e.key)
+      && !e.defaultPrevented && !e.isComposing && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey
+      && !e.target.closest("input, textarea, select, [contenteditable=true]")) {
+      e.preventDefault(); stepSkill(e.key === "ArrowRight" ? 1 : -1);
+    }
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && ["n", "т"].includes(e.key.toLowerCase())) { e.preventDefault(); return newChat(); }
+  if (menu?.dataset.kind === "chats" && ["ArrowDown", "ArrowUp", "Enter"].includes(e.key)) return chatsKeys(e);
+  if (e.key !== "Escape") return view === "remarks" && !showSettings && !menu && remarkKeys(e);
+  if (menu) closeMenu(); else if (showSettings) { showSettings = false; render(); }
+  else if (view === "remarks") { view = "chat"; render(); ed.focus(); } else if (running()) api("/api/stop", {chat: chat.id});
+});
+
+function chatsKeys(e) {  // ↑ ↓ through the remarks and the chats in the open menu, Enter opens
+  e.preventDefault();
+  const rows = [...menu.querySelectorAll("[data-remarks], [data-id]")], i = rows.findIndex((r) => r.classList.contains("on"));
+  if (e.key === "Enter") return rows[i]?.querySelector(".grow").click();
+  rows[i]?.classList.remove("on");
+  rows[(i + (e.key === "ArrowDown" ? 1 : rows.length - 1)) % rows.length]?.classList.add("on");
+}
+
+function ago(t) {
+  const s = Date.now() / 1000 - t;
+  return s < 60 ? "сейчас" : s < 3600 ? `${Math.round(s / 60)} мин` : s < 86400 ? `${Math.round(s / 3600)} ч` : `${Math.round(s / 86400)} дн`;
+}
+
+function connect() {
+  const es = new EventSource("/api/events");
+  es.onmessage = (m) => {
+    const e = JSON.parse(m.data);
+    if (e.type === "state") {
+      const docChanged = S.doc.path !== e.state.doc.path;
+      const keep = S.settings.agent ? {agent: S.settings.agent, model: S.settings.model} : {};
+      S = e.state; Object.assign(S.settings, keep);
+      if (docChanged) { if (library) { library.screen = "catalog"; library.detail = null; skillRequest++; } $("viewer").close(); chat = null; draftSkills = null; draftAuto = true; draftRef = "checklist"; draftEpoch++; uploads.clear(); failed = []; ed.innerHTML = ""; caret = null; R.list = []; changed(); loadRemarks(); }
+      if (chat && !S.chats.some((c) => c.id === chat.id)) chat = null;
+      render();
+    } else if (e.type === "selection") {
+      S.selection = e.selection;
+      if (!showSettings) view === "remarks" ? renderRemarks() : renderComposer();
+    } else if (e.type === "running") {
+      S.running = e.running; renderBanner(); flushQueue();
+      if (view === "chat" && !showSettings) { renderMessages(); renderComposer(); }
+    } else if (e.type === "skills") {
+      S.skills = e.skills;
+      if (library && !["add", "help"].includes(library.screen)) renderLibrary();
+      else if (!library) renderComposer();
+    } else if (e.type === "remarks") loadRemarks();
+    else if (e.type === "chat") {
+      const i = S.chats.findIndex((c) => c.id === e.chat.id);
+      const sum = {id: e.chat.id, title: e.chat.title, agent: e.chat.agent, model: e.chat.model, updated: e.chat.updated};
+      if (e.chat.file === S.doc.path) { if (i >= 0) S.chats[i] = sum; else S.chats.unshift(sum); }
+      if (chat?.id === e.chat.id) { chat = e.chat; if (!showSettings) { renderMessages(); renderComposer(); } }
+    }
+  };
+  es.onerror = () => { es.close(); setTimeout(connect, 2000); };
+}
+connect();
+ed.focus();
+</script>
+</body>
+</html>

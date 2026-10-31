@@ -1,0 +1,26 @@
+{
+  "images": [
+    {
+      "file": "assets/preview-light.webp",
+      "label": "Светлая"
+    },
+    {
+      "file": "assets/preview-dark.webp",
+      "label": "Тёмная"
+    }
+  ],
+  "links": [
+    {
+      "label": "Carbon · начало работы",
+      "url": "https://www.carbondesignsystem.com/getting-started/designing/overview"
+    },
+    {
+      "label": "Компоненты",
+      "url": "https://www.carbondesignsystem.com/components/overview/"
+    },
+    {
+      "label": "Дизайн-кит и исходники",
+      "url": "https://github.com/carbon-design-system/carbon-design-kit"
+    }
+  ]
+}

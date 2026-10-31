@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: ci
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: The tag matches every version and the CHANGELOG
+        id: version
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          python3 scripts/release.py --check "$v"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --target wasm32-unknown-unknown
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sidecar/web/package-lock.json
+      - run: npm --prefix sidecar/web ci && npm --prefix sidecar/web run build
+      - run: |
+          for target in plugin linux macos windows; do python3 scripts/package.py "$target"; done
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/*
+
+  smoke:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, bundle: linux}
+          - {os: macos-latest, bundle: macos}
+          - {os: windows-latest, bundle: windows}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+      - name: Install the bundle and start the chat's server
+        if: matrix.bundle != 'windows'
+        env:
+          PREFIX: ${{ runner.temp }}/prefix
+          FIGCRAFT_AGENT_PORT: "7990"
+          FIGCRAFT_CLI: /nonexistent
+        run: |
+          tar xzf figcraft-review-v*-${{ matrix.bundle }}.tar.gz
+          ./figcraft-review/install.sh
+          "$PREFIX/bin/figcraft-review" --help
+          "$PREFIX/bin/figcraft-agent" --server
+          curl -fsS http://127.0.0.1:7990/api/state
+          curl -fsS http://127.0.0.1:7990/ | grep -q "<html"
+      - name: Install the bundle and start the chat's server
+        if: matrix.bundle == 'windows'
+        shell: pwsh
+        env:
+          FIGCRAFT_AGENT_PORT: "7990"
+          FIGCRAFT_CLI: C:\nonexistent
+        run: |
+          Expand-Archive (Get-Item figcraft-review-v*-windows.zip) -DestinationPath .
+          .\figcraft-review\install.ps1
+          $bin = Join-Path $env:LOCALAPPDATA "figcraft-review\bin"
+          & "$bin\figcraft-review.cmd" --help
+          if ($LASTEXITCODE) { exit 1 }
+          & "$bin\figcraft-agent.cmd" --server
+          Invoke-RestMethod http://127.0.0.1:7990/api/state
+          if (-not ((Invoke-WebRequest http://127.0.0.1:7990/).Content -match "<html")) { exit 1 }
+
+  publish:
+    needs: [build, smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+      - run: cd dist && sha256sum * > SHA256SUMS
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/*
+      - name: Release notes from the CHANGELOG
+        run: python3 scripts/release.py --notes "${{ needs.build.outputs.version }}" > notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ needs.build.outputs.version }}"
+          pre=""; case "$v" in *-*) pre="--prerelease";; esac
+          gh release create "v$v" dist/* --title "FigCraft Review $v" --notes-file notes.md --verify-tag $pre

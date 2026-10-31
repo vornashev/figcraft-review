@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: FigCraft itself
+    url: https://github.com/storytold/figcraft/issues
+    about: Bugs in the FigCraft app, its CLI or plugin API

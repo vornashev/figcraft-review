@@ -1,0 +1,26 @@
+{
+  "images": [
+    {
+      "file": "assets/preview-light.webp",
+      "label": "Светлая"
+    },
+    {
+      "file": "assets/preview-dark.webp",
+      "label": "Тёмная"
+    }
+  ],
+  "links": [
+    {
+      "label": "Дизайн-кит, иконки и иллюстрации",
+      "url": "https://gravity-ui.com/design/branding/resources"
+    },
+    {
+      "label": "Дизайн: основы и компоненты",
+      "url": "https://gravity-ui.com/design"
+    },
+    {
+      "label": "Библиотеки",
+      "url": "https://gravity-ui.com/"
+    }
+  ]
+}

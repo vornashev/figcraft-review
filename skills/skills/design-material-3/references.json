@@ -1,0 +1,26 @@
+{
+  "images": [
+    {
+      "file": "assets/preview-light.webp",
+      "label": "Светлая"
+    },
+    {
+      "file": "assets/preview-dark.webp",
+      "label": "Тёмная"
+    }
+  ],
+  "links": [
+    {
+      "label": "Документация Material 3",
+      "url": "https://m3.material.io/"
+    },
+    {
+      "label": "Material 3 Design Kit · Figma",
+      "url": "https://www.figma.com/community/file/1035203688168086460/material-3-design-kit"
+    },
+    {
+      "label": "Токены",
+      "url": "https://m3.material.io/foundations/design-tokens/overview"
+    }
+  ]
+}

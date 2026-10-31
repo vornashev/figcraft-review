@@ -1,0 +1,101 @@
+# 3D & Hyperrealism
+
+## No
+
+5
+
+## Style Category
+
+3D & Hyperrealism
+
+## Type
+
+General
+
+## Keywords
+
+Depth, realistic textures, 3D models, spatial navigation, tactile, skeuomorphic elements, rich detail, immersive
+
+## Primary Colors
+
+Deep Navy #001F3F, Forest Green #228B22, Burgundy #800020, Gold #FFD700, Silver #C0C0C0
+
+## Secondary Colors
+
+Complex gradients (5-10 stops), realistic lighting, shadow variations (20-40% darker)
+
+## Effects & Animation
+
+WebGL/Three.js 3D, realistic shadows (layers), physics lighting, parallax (3-5 layers), smooth 3D (300-400ms)
+
+## Best For
+
+Gaming, product showcase, immersive experiences, high-end e-commerce, architectural viz, VR/AR
+
+## Do Not Use For
+
+Low-end mobile, performance-limited, critical accessibility, data tables/forms
+
+## Light Mode ✓
+
+conditional
+
+## Dark Mode ✓
+
+conditional
+
+## Performance
+
+cost:high|drivers:animation,large-images
+
+## Accessibility
+
+risk:high|requires:contrast-text-4.5,keyboard,visible-focus,reduced-motion
+
+## Mobile-Friendly
+
+not-recommended
+
+## Conversion-Focused
+
+◐ Medium
+
+## Framework Compatibility
+
+threejs|react-three-fiber|custom
+
+## Era/Origin
+
+2020s Modern
+
+## Complexity
+
+High
+
+## AI Prompt Keywords
+
+Build an immersive 3D interface using realistic textures, 3D models (Three.js/Babylon.js), complex shadows, realistic lighting, parallax scrolling (3-5 layers), physics-based motion. Include skeuomorphic elements with tactile detail.
+
+## CSS/Technical Keywords
+
+transform: translate3d, perspective: 1000px, WebGL canvas, Three.js/Babylon.js library, box-shadow: complex multi-layer, background: complex gradients, filter: drop-shadow()
+
+## Implementation Checklist
+
+☐ WebGL/Three.js integrated, ☐ 3D models loaded, ☐ Parallax 3-5 layers, ☐ Realistic lighting verified, ☐ Complex shadows rendered, ☐ Physics animation smooth 300-400ms
+
+## Design System Variables
+
+--perspective: 1000px, --parallax-layers: 5, --lighting-intensity: realistic, --shadow-depth: 20-40%, --animation-duration: 300-400ms
+
+## Style ID
+
+3d-and-hyperrealism
+
+## Status
+
+active
+
+## Preferred Mode
+
+auto

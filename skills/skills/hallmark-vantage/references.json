@@ -1,0 +1,22 @@
+{
+  "images": [
+    {
+      "file": "preview.webp",
+      "label": "Десктоп"
+    },
+    {
+      "file": "mobile.webp",
+      "label": "Телефон"
+    }
+  ],
+  "links": [
+    {
+      "label": "Открыть пример",
+      "url": "https://www.usehallmark.com/themes/vantage/"
+    },
+    {
+      "label": "Исходник темы",
+      "url": "https://github.com/nutlope/hallmark/blob/8f6969f8922caabde9de1784959eae11ddf68073/skills/hallmark/references/themes/vantage.md"
+    }
+  ]
+}

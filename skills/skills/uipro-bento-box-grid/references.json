@@ -1,0 +1,18 @@
+{
+  "images": [
+    {
+      "file": "assets/preview.webp",
+      "label": "Образец по спецификации стиля"
+    }
+  ],
+  "links": [
+    {
+      "label": "Каталог UI UX Pro Max",
+      "url": "https://www.uupm.cc/"
+    },
+    {
+      "label": "Исходная спецификация",
+      "url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/28b3b8dee8c976df4fa3e94aed4e092ad43fcb03/src/ui-ux-pro-max/data/styles.csv"
+    }
+  ]
+}

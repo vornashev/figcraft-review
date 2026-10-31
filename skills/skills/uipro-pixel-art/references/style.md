@@ -1,0 +1,101 @@
+# Pixel Art
+
+## No
+
+52
+
+## Style Category
+
+Pixel Art
+
+## Type
+
+General
+
+## Keywords
+
+Retro, 8-bit, 16-bit, gaming, blocky, nostalgic, pixelated, arcade
+
+## Primary Colors
+
+Primary colors (NES Palette), brights, limited palette
+
+## Secondary Colors
+
+Black outlines, shading via dithering or block colors
+
+## Effects & Animation
+
+Frame-by-frame sprite animation, blinking cursor, instant transitions, marquee text
+
+## Best For
+
+Indie games, retro tools, creative portfolios, nostalgia marketing, Web3/NFT
+
+## Do Not Use For
+
+Professional corporate, modern SaaS, high-res photography sites
+
+## Light Mode ✓
+
+supported
+
+## Dark Mode ✓
+
+supported
+
+## Performance
+
+cost:low|drivers:none
+
+## Accessibility
+
+risk:conditional|requires:contrast-text-4.5,keyboard,visible-focus,reduced-motion
+
+## Mobile-Friendly
+
+adaptable
+
+## Conversion-Focused
+
+◐ Medium
+
+## Framework Compatibility
+
+custom|canvas
+
+## Era/Origin
+
+1980s Arcade
+
+## Complexity
+
+Medium
+
+## AI Prompt Keywords
+
+Design a pixel art inspired interface. Use: pixelated fonts, 8-bit or 16-bit aesthetic, sharp edges (image-rendering: pixelated), limited color palette, blocky UI elements, retro gaming feel.
+
+## CSS/Technical Keywords
+
+font-family: 'Press Start 2P', image-rendering: pixelated, box-shadow: 4px 0 0 #000 (pixel border), no anti-aliasing
+
+## Implementation Checklist
+
+☐ Pixelated fonts loaded, ☐ Images sharp (no blur), ☐ CSS box-shadow for pixel borders, ☐ Retro palette, ☐ Blocky layout
+
+## Design System Variables
+
+--pixel-size: 4px, --font: pixel font, --border-style: pixel-shadow, --anti-alias: none
+
+## Style ID
+
+pixel-art
+
+## Status
+
+active
+
+## Preferred Mode
+
+auto

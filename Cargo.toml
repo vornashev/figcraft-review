@@ -1,0 +1,25 @@
+[package]
+name = "figcraft-review"
+version = "0.5.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+figcraft-plugin-sdk = { git = "https://github.com/storytold/figcraft", rev = "90054a8" }
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+
+# A plugin is loaded on every run: keep the module small.
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

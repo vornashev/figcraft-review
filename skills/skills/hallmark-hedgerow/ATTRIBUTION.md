@@ -1,0 +1,7 @@
+# hallmark-hedgerow
+
+- Source: https://github.com/nutlope/hallmark/blob/8f6969f8922caabde9de1784959eae11ddf68073/skills/hallmark/references/themes/hedgerow.md
+- Changes: OKLCH as hex, the genre file added, notes for FigCraft on top
+- Preview: https://github.com/nutlope/hallmark/blob/8f6969f8922caabde9de1784959eae11ddf68073/site/assets/desk/hedgerow.webp
+- Preview: https://github.com/nutlope/hallmark/blob/8f6969f8922caabde9de1784959eae11ddf68073/site/assets/phone/hedgerow.webp
+- License: MIT, see ../hallmark/LICENSE

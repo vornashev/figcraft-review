@@ -1,0 +1,49 @@
+name: Bug
+description: Something doesn't work as described
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Select a layer\n2. Run `figcraft-review annotate`\n3. …"
+    validations:
+      required: true
+  - type: dropdown
+    id: part
+    attributes:
+      label: Part
+      options: [Plugin (widget or panel), CLI (review.py), Agent chat, Design skills, Install or release bundle]
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS and version
+      placeholder: macOS 15.1 / Windows 11 / Arch Linux, Hyprland
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: FigCraft Review and FigCraft versions
+      placeholder: "0.5.0, FigCraft 0.13.1"
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent CLI and version (for the chat)
+      placeholder: "Claude Code 2.3.0 / Codex 0.166.0 / pi"
+  - type: textarea
+    id: log
+    attributes:
+      label: Logs
+      description: For the chat, the end of `server.log` in the state folder. Remove anything private.
+      render: text

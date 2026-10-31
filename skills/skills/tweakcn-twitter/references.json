@@ -1,0 +1,22 @@
+{
+  "images": [
+    {
+      "file": "assets/light.webp",
+      "label": "Светлый образец по токенам"
+    },
+    {
+      "file": "assets/dark.webp",
+      "label": "Тёмный образец по токенам"
+    }
+  ],
+  "links": [
+    {
+      "label": "Редактор tweakcn",
+      "url": "https://tweakcn.com"
+    },
+    {
+      "label": "Исходные пресеты",
+      "url": "https://github.com/jnsahaj/tweakcn/blob/a3b47b37cba97dd637de517aab52c45ec0f83456/utils/theme-presets.ts"
+    }
+  ]
+}

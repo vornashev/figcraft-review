@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+      - run: cargo build --release --target wasm32-unknown-unknown
+      - name: Plugin size
+        run: |
+          size=$(stat -c %s target/wasm32-unknown-unknown/release/figcraft_review.wasm)
+          echo "figcraft_review.wasm: $size bytes" >> "$GITHUB_STEP_SUMMARY"
+          # A plugin is loaded on every run of FigCraft: keep it small.
+          if [ "$size" -gt 400000 ]; then echo "::warning::the plugin grew to $size bytes"; fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: plugin
+          path: target/wasm32-unknown-unknown/release/figcraft_review.wasm
+
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.11", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/ruff-action@v4
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13'
+      - run: python -m unittest discover -s agent -p "test_*.py" -v
+      - run: python -m unittest discover -s sidecar -p "test_*.py"
+      - name: The launcher starts the server
+        shell: bash
+        env:
+          FIGCRAFT_AGENT_PORT: "7990"
+        run: |
+          mkdir -p sidecar/web/dist && echo '<!doctype html><title>stub</title>' > sidecar/web/dist/index.html
+          python sidecar/launch.py --server
+          python -c "import json, urllib.request; print(json.load(urllib.request.urlopen('http://127.0.0.1:7990/api/state', timeout=5)).keys())"
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sidecar/web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sidecar/web/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - uses: browser-actions/setup-chrome@v2
+        id: chrome
+      - name: The chat in headless Chromium
+        run: node ../test_ui.mjs
+        env:
+          CHROMIUM: ${{ steps.chrome.outputs.chrome-path }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: chat-page
+          path: sidecar/web/dist/index.html
+
+  changelog:
+    if: github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-changelog')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: CHANGELOG.md has a line for this change
+        run: |
+          changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          if echo "$changed" | grep -qvE '^(\.github/|docs/|.*\.md$|design/)' && ! echo "$changed" | grep -qx CHANGELOG.md; then
+            echo "::error::Add a line under ## [Unreleased] in CHANGELOG.md, or label the PR skip-changelog."
+            exit 1
+          fi

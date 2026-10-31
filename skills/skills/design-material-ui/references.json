@@ -1,0 +1,26 @@
+{
+  "images": [
+    {
+      "file": "assets/preview-light.webp",
+      "label": "Светлая"
+    },
+    {
+      "file": "assets/preview-dark.webp",
+      "label": "Тёмная"
+    }
+  ],
+  "links": [
+    {
+      "label": "Дизайн-киты",
+      "url": "https://mui.com/material-ui/getting-started/design-resources/"
+    },
+    {
+      "label": "Тема и токены",
+      "url": "https://mui.com/material-ui/customization/theming/"
+    },
+    {
+      "label": "Компоненты",
+      "url": "https://mui.com/material-ui/"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+target/
+node_modules/
+sidecar/web/dist/
+.ruff_cache/
+.DS_Store
+/dist/

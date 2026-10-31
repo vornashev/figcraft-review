@@ -1,0 +1,18 @@
+{
+  "images": [
+    {
+      "file": "assets/preview.webp",
+      "label": "Оригинальное превью TypeUI"
+    }
+  ],
+  "links": [
+    {
+      "label": "Пример TypeUI",
+      "url": "https://typeui.sh/design-skills/impeccable"
+    },
+    {
+      "label": "Исходник",
+      "url": "https://github.com/bergside/awesome-design-skills/tree/f631a09b4fcc0166f2e2c1a8c81906ef680c57e8/skills/impeccable"
+    }
+  ]
+}

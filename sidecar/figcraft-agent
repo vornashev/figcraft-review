@@ -1,0 +1,5 @@
+#!/bin/sh
+# Opens the FigCraft Agent chat beside FigCraft; starts its server when it isn't running (see launch.py).
+# Bind it to a key (SUPER+ALT+I here); --server only starts the server.
+HERE=$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)
+exec python3 "$HERE/launch.py" "$@"
