@@ -50,7 +50,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
-      - uses: astral-sh/ruff-action@v4
+      - uses: astral-sh/ruff-action@v4.1.0
         if: matrix.os == 'ubuntu-latest' && matrix.python == '3.13'
       - run: python -m unittest discover -s agent -p "test_*.py" -v
       - run: python -m unittest discover -s sidecar -p "test_*.py"

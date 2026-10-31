@@ -10,13 +10,14 @@ const page = "file://" + path.join(path.dirname(new URL(import.meta.url).pathnam
 const port = 9300 + Math.floor(Math.random() * 600);
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "figcraft-agent-ui-"));
 const chrome = spawn(process.env.CHROMIUM || "chromium", ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-  "--window-size=420,860", "--no-first-run", "about:blank"], {stdio: "ignore"});
+  "--window-size=420,860", "--no-first-run", ...(process.env.CI ? ["--no-sandbox"] : []), "about:blank"], {stdio: "ignore"});
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let targets;
 for (let i = 0; i < 50 && !targets; i++) {
   await sleep(200);
   targets = await fetch(`http://127.0.0.1:${port}/json`).then((r) => r.json()).catch(() => null);
 }
+if (!targets) { chrome.kill(); throw new Error(`${process.env.CHROMIUM || "chromium"} didn't open its debugging port`); }
 const ws = new WebSocket(targets.find((t) => t.type === "page").webSocketDebuggerUrl);
 await new Promise((r) => ws.onopen = r);
 let n = 0;
