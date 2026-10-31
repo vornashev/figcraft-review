@@ -78,6 +78,8 @@ jobs:
           & "$dir\bin\figcraft-review.cmd" --help
           if ($LASTEXITCODE) { exit 1 }
           Start-Process -Wait "$dir\unins000.exe" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES'
+          # the uninstaller hands over to a copy of itself in %TEMP%, so -Wait returns early
+          for ($i = 0; $i -lt 60 -and (Test-Path "$dir\app"); $i++) { Start-Sleep 1 }
           if (Test-Path "$dir\app") { Write-Error "the uninstaller left the app"; exit 1 }
       - uses: actions/upload-artifact@v7
         with:
@@ -89,7 +91,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15-intel]
+        os: [macos-15, macos-15-intel]  # arm64, x64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
