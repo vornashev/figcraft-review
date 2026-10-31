@@ -1,7 +1,7 @@
 {
   "id": "vornashev.figcraft-review",
   "name": "Review",
-  "version": "0.5.0",
+  "version": "0.5.0-rc.1",
   "description": "Numbered remarks on layers as annotations (#N · text, status as the category), a panel to add them to the selection and a canvas widget to tick them off. agent/review.py hands them to a coding agent.",
   "author": "vornashev",
   "main": "target/wasm32-unknown-unknown/release/figcraft_review.wasm",
