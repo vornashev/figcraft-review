@@ -44,6 +44,11 @@ Name: "startup"; Description: "Запускать при входе в сист�
 Type: filesandordirs; Name: "{app}\app"
 Type: filesandordirs; Name: "{app}\python"
 
+[UninstallDelete]
+; bytecode Python wrote while the app ran (Inno removes only the files it installed)
+Type: filesandordirs; Name: "{app}\app"
+Type: filesandordirs; Name: "{app}\python"
+
 [Files]
 Source: "{#Source}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
